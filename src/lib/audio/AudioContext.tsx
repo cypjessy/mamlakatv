@@ -5,15 +5,21 @@ import { createContext, useContext, useRef, useState, useCallback, useEffect, ty
 // Lazy-loaded Capacitor MediaSession plugin.
 // On web (Vercel) this gracefully degrades; on native Android it
 // provides lock-screen playback controls.
-// We use a dynamic import() so the bundler doesn't fail at build time
-// when the package is absent, and we always null-check before calling.
+// We use require() inside a Promise so the bundler only warns
+// instead of erroring on the missing package. The catch handler
+// ensures no runtime crash when the package is absent.
 let MediaSessionPromise: Promise<any> | null = null;
 function getMediaSession(): Promise<any> {
   if (!MediaSessionPromise) {
-    // @ts-expect-error - package may be absent; handled at runtime via .catch()
-    MediaSessionPromise = import("@jofr/capacitor-media-session")
-      .then((m) => m.MediaSession)
-      .catch(() => null);
+    MediaSessionPromise = new Promise((resolve) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const ms = require("@jofr/capacitor-media-session");
+        resolve(ms.MediaSession);
+      } catch {
+        resolve(null);
+      }
+    });
   }
   return MediaSessionPromise;
 }
