@@ -162,8 +162,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
               }, 300);
             });
           }
-          // Create notification immediately (before buffering completes)
-          try { createNotification(mediaTitleRef.current, mediaArtistRef.current, mediaArtRef.current); } catch {}
           setIsPlaying(true);
         }
         break;
@@ -201,8 +199,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
               audio.load();
               audio.play().catch(() => {});
             }
-            // Create notification immediately (before buffering completes)
-            try { createNotification(mediaTitleRef.current, mediaArtistRef.current, mediaArtRef.current); } catch {}
             setIsPlaying(true);
           }
         }
@@ -264,9 +260,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
     const onPlay = () => {
       setIsPlaying(true);
-      // Safety net: ensure notification exists if the audio play() event
-      // fires without going through our explicit createNotification paths
-      createNotification(mediaTitleRef.current, mediaArtistRef.current, mediaArtRef.current);
     };
     const onPause = () => {
       setIsPlaying(false);
@@ -305,11 +298,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const play = useCallback((url: string, stationId?: number) => {
     const audio = audioRef.current;
     if (!audio || !url) return;
-
-    // Create notification immediately (before buffering) so the user
-    // sees controls as soon as they tap Play
-    try { createNotification(mediaTitleRef.current, mediaArtistRef.current, mediaArtRef.current); } catch {}
-
     const cacheBust = url.includes("?") ? `&_=${Date.now()}` : `?_=${Date.now()}`;
     audio.src = url + cacheBust;
     audio.load();
@@ -338,7 +326,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setIsPlaying(false);
     setCurrentStreamUrl(null);
     setCurrentStationId(null);
-    destroyNotification();
   }, []);
 
   const toggle = useCallback((url: string, stationId?: number) => {
@@ -349,9 +336,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       // Currently playing — pause
       audio.pause();
     } else {
-      // Create notification immediately (before buffering)
-      try { createNotification(mediaTitleRef.current, mediaArtistRef.current, mediaArtRef.current); } catch {}
-
       // Force a fresh stream connection with cache busting.
       const cacheBust = url.includes("?") ? `&_=${Date.now()}` : `?_=${Date.now()}`;
       audio.src = url + cacheBust;
