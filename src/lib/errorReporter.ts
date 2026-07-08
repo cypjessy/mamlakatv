@@ -1,6 +1,6 @@
 "use client";
 
-const STORAGE_KEY = "faithstream_errors";
+const STORAGE_KEY = "crc_errors";
 const MAX_STORED = 20;
 
 interface ErrorReport {

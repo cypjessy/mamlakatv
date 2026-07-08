@@ -8,10 +8,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.faithstream.app"
+    namespace = "com.christianrevival.church"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.faithstream.app"
+        applicationId "com.christianrevival.church"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

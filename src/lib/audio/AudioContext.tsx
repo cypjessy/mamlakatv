@@ -83,8 +83,8 @@ async function createNotification(title: string, artist: string, albumArt?: stri
     } catch { /* no existing notification to destroy */ }
     try {
       await mc.create({
-        track: title || "Kingdom Seekers Radio",
-        artist: artist || "Kingdom Seekers Church Nakuru",
+        track: title || "CHRISTIAN REVIVAL CHURCH Radio",
+        artist: artist || "CHRISTIAN REVIVAL CHURCH",
         album: "Radio Stream",
         cover: albumArt || "",
         hasPrev: false,
@@ -96,7 +96,7 @@ async function createNotification(title: string, artist: string, albumArt?: stri
         elapsed: 0,
         isPlaying: true,
         dismissable: false,
-        ticker: title ? `Now playing: ${title}` : "Kingdom Seekers Radio",
+        ticker: title ? `Now playing: ${title}` : "CHRISTIAN REVIVAL CHURCH Radio",
       });
     } catch {
       // Plugin not available or create failed
@@ -174,8 +174,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.8);
 
   // Media session metadata (pushed by consuming components)
-  const mediaTitleRef = useRef("Kingdom Seekers Radio");
-  const mediaArtistRef = useRef("Kingdom Seekers Church Nakuru");
+  const mediaTitleRef = useRef("CHRISTIAN REVIVAL CHURCH Radio");
+  const mediaArtistRef = useRef("CHRISTIAN REVIVAL CHURCH");
   const mediaArtRef = useRef<string | undefined>(undefined);
 
   // Next/prev station callbacks (set by consuming components).
@@ -331,8 +331,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           const ms = getMediaSession();
           if (ms && typeof ms.setMetadata === 'function') {
             await ms.setMetadata({
-              title: title || 'Kingdom Seekers Radio',
-              artist: artist || 'Kingdom Seekers Church Nakuru',
+              title: title || 'CHRISTIAN REVIVAL CHURCH Radio',
+              artist: artist || 'CHRISTIAN REVIVAL CHURCH',
               album: 'Radio Stream',
               artwork: albumArt ? [{ src: albumArt, sizes: '512x512', type: 'image/jpeg' }] : [],
               duration: -1, // Live stream

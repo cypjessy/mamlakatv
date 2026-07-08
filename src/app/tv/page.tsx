@@ -158,7 +158,7 @@ export default function TVPage() {
   const handleExportNotes = useCallback(() => {
     if (allNotes.length === 0) return;
     const lines: string[] = [];
-    lines.push("# FaithStream Notes Export");
+    lines.push("# CRC Notes Export");
     lines.push("");
     lines.push(`Exported on: ${new Date().toLocaleDateString([], { year: "numeric", month: "long", day: "numeric" })}`);
     lines.push(`Total notes: ${allNotes.length}`);
@@ -185,7 +185,7 @@ export default function TVPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `faithstream-notes-${new Date().toISOString().split("T")[0]}.md`;
+    a.download = `crc-notes-${new Date().toISOString().split("T")[0]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -29,6 +29,7 @@ import { hapticSuccess } from "@/lib/haptics";
 import { getRadioConfig, defaultRadioConfig } from "@/lib/radioConfig";
 import type { Playlist, StationFile, QueueItem } from "@/lib/azuracast";
 import dynamic from "next/dynamic";
+import RadioEmbed from "@/components/shared/RadioEmbed";
 
 const RadioOverviewTab = dynamic(() => import("@/components/admin/radio/tabs/RadioOverviewTab").then(m => m.RadioOverviewTab), { ssr: false });
 const RadioMediaTab = dynamic(() => import("@/components/admin/radio/tabs/RadioMediaTab").then(m => m.RadioMediaTab), { ssr: false });
@@ -62,10 +63,10 @@ export default function AdminRadioPage() {
   useEffect(() => {
     getRadioConfig().then((config) => {
       if (config) setRadioConfig({
-        stationName: config.stationName || "Kingdom Seekers Radio",
+        stationName: config.stationName || "CHRISTIAN REVIVAL CHURCH Radio",
         description: config.description || "Radio Station",
         stationId: config.stationId || "2",
-        embedUrl: config.embedUrl || "https://azuracast.histoview.co.ke/public/turningpoint_church/embed?theme=dark",
+        embedUrl: config.embedUrl || "https://azuracast.histoview.co.ke/public/kingdom_seekers_church/embed?autoplay=1&rounded=1&allow_popup=1&continuous=1",
         streamUrl: config.streamUrl || "",
       });
     }).catch(() => {});
@@ -1726,16 +1727,9 @@ export default function AdminRadioPage() {
 
         {/* ========== AZURACAST EMBEDDED PLAYER ========== */}
         <div style={{ margin: "8px 16px 0" }}>
-          <iframe
-            src="https://azuracast.histoview.co.ke/public/turningpoint_church/embed?primary_color=E8A838&bg_color=1E1E1E&volume=100&rounded=1&allow_popup=1&continuous=1"
-            frameBorder="0"
-            // @ts-expect-error - React 19 requires lowercase HTML attributes
-            allowtransparency="true"
-            allow="autoplay; encrypted-media; fullscreen"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-            loading="eager"
-            style={{ width: '100%', minHeight: '150px', height: '150px', border: 0, display: 'block', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}
-            title="Kingdom Seekers Radio Player"
+          <RadioEmbed
+            src="https://azuracast.histoview.co.ke/public/kingdom_seekers_church/embed?autoplay=1&rounded=1&allow_popup=1&continuous=1"
+            title="CHRISTIAN REVIVAL CHURCH Radio Player"
           />
         </div>
 

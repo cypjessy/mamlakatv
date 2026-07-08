@@ -4,6 +4,7 @@ import React from "react";
 import type { Playlist, StationFile, QueueItem } from "@/lib/azuracast";
 import { getApiBase, toggleAutoDJ, togglePlaylistEnabled as apiTogglePlaylist, createPlaylist as apiCreatePlaylist, addSongsToPlaylist as apiAddSongs } from "@/lib/azuracast";
 import { hapticSuccess } from "@/lib/haptics";
+import RadioEmbed from "@/components/shared/RadioEmbed";
 
 interface RadioOverviewTabProps {
   overviewNP: any | null;
@@ -258,20 +259,13 @@ export function RadioOverviewTab(props: RadioOverviewTabProps) {
         </div>
       </div>
 
-      {/* Now Playing - Premium AzuraCast Embedded Player */}
-      <div style={{ background: "var(--surface-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 0, overflow: "hidden" }}>
-        <iframe
-          src="https://azuracast.histoview.co.ke/public/turningpoint_church/embed?primary_color=E8A838&bg_color=1E1E1E&volume=100&rounded=1&allow_popup=1&continuous=1"
-          frameBorder="0"
-          // @ts-expect-error - React 19 requires lowercase HTML attributes
-          allowtransparency="true"
-          allow="autoplay; encrypted-media; fullscreen"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-          loading="eager"
-          style={{ width: '100%', minHeight: '150px', height: '150px', border: 0, display: 'block' }}
-          title="Kingdom Seekers Radio Player"
-        />
-      </div>
+          {/* Now Playing - Premium AzuraCast Embedded Player */}
+          <div style={{ background: "var(--surface-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 0, overflow: "hidden" }}>
+            <RadioEmbed
+              src="https://azuracast.histoview.co.ke/public/kingdom_seekers_church/embed?autoplay=1&rounded=1&allow_popup=1&continuous=1"
+              title="CHRISTIAN REVIVAL CHURCH Radio Player"
+            />
+          </div>
 
       {/* Quick Actions */}
       <div className="section-block">

@@ -19,7 +19,7 @@ import type { AlbumEntry } from "@/lib/albumEntries";
 import { Timestamp } from "firebase/firestore";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
 
-const churchId = process.env.NEXT_PUBLIC_CHURCH_ID || "kingdom_seekers_church_nakuru";
+const churchId = process.env.NEXT_PUBLIC_CHURCH_ID || "christian_revival_church";
 const categories = ["all", "events", "services", "community", "leadership", "facility"];
 const defaultAlbumTitles: Record<string, string> = {
   events: "Church Events",
@@ -776,7 +776,7 @@ export default function AdminContentPage() {
         .tab-btn:active { opacity: 0.7; }
 
         /* ========== CONTENT ========== */
-        .content-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
+        .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
         .content-scroll::-webkit-scrollbar { display: none; }
 
         /* ========== GALLERY TOP BAR ========== */

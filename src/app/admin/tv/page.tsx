@@ -1424,7 +1424,7 @@ export default function AdminTVPage() {
             <div className="live-giving-form">
               <div className="form-group">
                 <label className="form-label"><i className="fas fa-church"></i> Church Name</label>
-                <input className="form-input" type="text" value={gcChurchName} onChange={(e) => setGcChurchName(e.target.value)} placeholder="e.g. Kingdom Seekers Church" />
+                <input className="form-input" type="text" value={gcChurchName} onChange={(e) => setGcChurchName(e.target.value)} placeholder="e.g. CHRISTIAN REVIVAL CHURCH" />
               </div>
               <div className="form-group">
                 <label className="form-label"><i className="fas fa-align-left"></i> Description</label>
@@ -1531,7 +1531,7 @@ export default function AdminTVPage() {
         .header-title { font-size: 16px; font-weight: 700; }
         .header-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
 
-        .content-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
+        .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
         .content-scroll::-webkit-scrollbar { display: none; }
 
         .section { padding: 12px; display: flex; flex-direction: column; gap: 12px; }

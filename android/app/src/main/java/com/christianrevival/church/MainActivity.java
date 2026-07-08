@@ -1,4 +1,4 @@
-package com.faithstream.app;
+package com.christianrevival.church;
 
 import android.app.PictureInPictureParams;
 import android.content.pm.PackageManager;
@@ -79,6 +79,13 @@ public class MainActivity extends BridgeActivity {
             webView = getBridge().getWebView();
         }
         if (webView != null) {
+            // Prevent white flash before web content renders
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                webView.setBackgroundColor(android.graphics.Color.parseColor("#0F0F0F"));
+            } else {
+                webView.setBackgroundColor(0xFF0F0F0F);
+            }
+
             // Add JavaScript interface for PiP state tracking (only once)
             if (!jsInterfaceAdded) {
                 webView.addJavascriptInterface(new PiPBridge(), "AndroidPiP");

@@ -23,7 +23,7 @@ export default function ChurchSelector() {
     <div className="church-selector">
       <div className="church-pill" id="churchPill">
         <i className="fas fa-church"></i>
-        <span>Kingdom Seekers Church Nakuru</span>
+        <span>CHRISTIAN REVIVAL CHURCH</span>
         <i className="fas fa-chevron-down"></i>
       </div>
     </div>

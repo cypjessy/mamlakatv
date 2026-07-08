@@ -8,16 +8,17 @@ import { RootErrorBoundary } from "@/components/shared/RootErrorBoundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kingdom Seekers Church Nakuru",
+  title: "CHRISTIAN REVIVAL CHURCH",
   description:
-    "Kingdom Seekers Church Nakuru connects you to live radio, sermons, videos, and community — anywhere, anytime.",
+    "CHRISTIAN REVIVAL CHURCH connects you to live radio, sermons, videos, and community — anywhere, anytime.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Kingdom Seekers Church Nakuru",
+    title: "CHRISTIAN REVIVAL CHURCH",
   },
   icons: {
     icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 };
 

@@ -55,7 +55,7 @@ export default function LoginForm() {
         return;
       }
 
-      const storedCreds = await NativeBiometric.getCredentials({ server: "kingdom-seekers-church-auth" });
+      const storedCreds = await NativeBiometric.getCredentials({ server: "christian-revival-church-auth" });
       if (!storedCreds?.username || !storedCreds?.password) {
         showToast("No Credentials", "Please sign in manually first to set up biometrics", "info");
         setHasBiometric(false);
@@ -63,7 +63,7 @@ export default function LoginForm() {
         return;
       }
 
-      await NativeBiometric.verifyIdentity({ reason: "Sign in to Kingdom Seekers Church Nakuru", title: "Biometric Sign In" });
+      await NativeBiometric.verifyIdentity({ reason: "Sign in to CHRISTIAN REVIVAL CHURCH", title: "Biometric Sign In" });
 
       setIsLoading(true);
       const result = await signInWithEmailAndPassword(auth, storedCreds.username, storedCreds.password);

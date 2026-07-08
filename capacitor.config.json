@@ -1,6 +1,6 @@
 {
-  "appId": "com.faithstream.app",
-  "appName": "Kingdom Seekers Church",
+  "appId": "com.christianrevival.church",
+  "appName": "CHRISTIAN REVIVAL CHURCH",
   "webDir": "out",
   "plugins": {
     "SplashScreen": {

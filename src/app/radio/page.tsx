@@ -8,6 +8,7 @@ import { getNowPlaying, getSongHistory, getSettings, getStreamers, getApiBase, g
 import type { NowPlayingData, SongHistoryItem, StationSettings, Streamer } from "@/lib/azuracast";
 import { churchConfig } from "@/lib/churchConfig";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
+import RadioEmbed from "@/components/shared/RadioEmbed";
 
 export default function RadioPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function RadioPage() {
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [radioLoading, setRadioLoading] = useState(true);
 
-  const stationName = settings?.name || "Kingdom Seekers Radio";
+  const stationName = settings?.name || "CHRISTIAN REVIVAL CHURCH Radio";
 
   /* Poll AzuraCast now playing + history every 10 seconds */
   useEffect(() => {
@@ -305,7 +306,7 @@ export default function RadioPage() {
         <header className="header">
           <button className="header-back" onClick={() => window.history.back()}><i className="fas fa-arrow-left"></i></button>
           <div className="header-info">
-            <div className="header-name">Kingdom Seekers Church</div>
+            <div className="header-name">CHRISTIAN REVIVAL CHURCH</div>
             <div className="header-dj">
               <i className="fas fa-tower-cell"></i> {stationName}
             </div>
@@ -328,16 +329,9 @@ export default function RadioPage() {
               <div className="section-spacer">
                 {/* Now Playing — Premium AzuraCast Embedded Player */}
                 <div className="np-glass" style={{ padding: 0, overflow: 'hidden' }}>
-                  <iframe
-                    src="https://azuracast.histoview.co.ke/public/turningpoint_church/embed?primary_color=E8A838&bg_color=1A1A1A&volume=100&rounded=1&allow_popup=1&continuous=1"
-                    frameBorder="0"
-                    // @ts-expect-error - React 19 requires lowercase HTML attributes
-                    allowtransparency="true"
-                    allow="autoplay; encrypted-media; fullscreen"
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-                    loading="eager"
-                    style={{ width: '100%', minHeight: '150px', height: '150px', border: 0, display: 'block' }}
-                    title="Kingdom Seekers Radio Player"
+                  <RadioEmbed
+                    src="https://azuracast.histoview.co.ke/public/kingdom_seekers_church/embed?autoplay=1&rounded=1&allow_popup=1&continuous=1"
+                    title="CHRISTIAN REVIVAL CHURCH Radio Player"
                   />
                 </div>
 

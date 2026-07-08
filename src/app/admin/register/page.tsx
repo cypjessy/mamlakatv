@@ -58,7 +58,7 @@ function RegisterForm() {
         email,
         display_name: name,
         photo_url: firebaseUser.photoURL || "",
-        church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "kingdom_seekers_church_nakuru",
+        church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "christian_revival_church",
         role: "admin" as const,
         phone: "",
         is_verified: false,
@@ -239,7 +239,9 @@ export default function AdminRegisterPage() {
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         html, body { height: 100%; background: var(--bg); color: var(--text-primary); }
         .app-container { min-height: 100vh; display: flex; flex-direction: column; }
-        @media (min-width: 480px) { .app-container { max-width: 480px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+        @media (min-width: 768px) {
+            .app-container { justify-content: center; }
+        }
         .input-group { position: relative; }
         .input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
         .input-wrapper { position: relative; background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; transition: all 0.25s ease; overflow: hidden; }

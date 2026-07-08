@@ -18,7 +18,8 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="AppTheme">
-        <!-- Solid dark background — no Capacitor default logo flash -->
+        <!-- Solid dark window background — prevents white flash on Android 8+ -->
+        <item name="android:windowBackground">#0F0F0F</item>
         <item name="android:background">#0F0F0F</item>
     </style>
 </resources>

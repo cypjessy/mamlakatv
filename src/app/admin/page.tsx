@@ -584,7 +584,7 @@ export default function AdminPage() {
 
 
         /* ========== SCROLLABLE CONTENT ========== */
-        .content-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
+        .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
         .content-scroll::-webkit-scrollbar { display: none; }
 
         /* ========== HEADER ========== */
@@ -722,14 +722,9 @@ export default function AdminPage() {
             padding: 0 16px;
             display: flex; flex-direction: column; gap: 16px;
         }
-        @media (min-width: 640px) {
-            .dash-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
-        }
-        @media (min-width: 1024px) {
-            .dash-grid { grid-template-columns: 1fr 380px; }
-        }
 
         .dash-section { margin-bottom: 0; }
+
         .dash-section-title {
             font-size: 16px; font-weight: 700; margin-bottom: 12px;
             display: flex; align-items: center; justify-content: space-between;

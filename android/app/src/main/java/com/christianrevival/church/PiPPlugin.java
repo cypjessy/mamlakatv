@@ -1,4 +1,4 @@
-package com.faithstream.app;
+package com.christianrevival.church;
 
 import android.app.Activity;
 import android.app.PictureInPictureParams;

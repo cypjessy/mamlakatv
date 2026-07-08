@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "259771647280",
-    "project_id": "the-premium-daktari",
-    "storage_bucket": "the-premium-daktari.firebasestorage.app"
+    "project_number": "805350988448",
+    "project_id": "campuslink-rgxfu",
+    "storage_bucket": "campuslink-rgxfu.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:259771647280:android:ec579cccd2152faa2274f5",
+        "mobilesdk_app_id": "1:805350988448:android:4c365e77d220579b10c7c5",
         "android_client_info": {
-          "package_name": "com.faithstream.app"
+          "package_name": "com.christianrevival.church"
         }
       },
       "oauth_client": [
         {
-          "client_id": "259771647280-7e481c9pugt8imul0mqd6a0g7o4aop21.apps.googleusercontent.com",
+          "client_id": "805350988448-33ulu63cbevnji0mmnd6tdet3f93sco7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBDRfxs1L8ewVg0Ov9bsKiXjHQltRg0UTo"
+          "current_key": "AIzaSyAMQL8C8P8T6YcZdPzGoREowG3s5GCwBxQ"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "259771647280-7e481c9pugt8imul0mqd6a0g7o4aop21.apps.googleusercontent.com",
+              "client_id": "805350988448-33ulu63cbevnji0mmnd6tdet3f93sco7.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

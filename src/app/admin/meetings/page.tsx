@@ -401,7 +401,7 @@ export default function AdminMeetingsPage() {
         .header-title { font-size: 15px; font-weight: 700; line-height: 1.2; display: flex; align-items: center; gap: 8px; }
         .header-count { font-size: 12px; color: var(--text-tertiary); font-weight: 500; }
 
-        .content-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 100px; }
+        .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 100px; }
         .content-scroll::-webkit-scrollbar { display: none; }
 
         .toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-shrink: 0; background: var(--bg); }
