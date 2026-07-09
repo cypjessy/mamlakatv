@@ -212,44 +212,80 @@ export default function SubscriptionsTab() {
   }, []);
 
   async function handlePayNow() {
-    if (!PAYSTACK_PUBLIC_KEY) {
+    const planKey = isUpgraded ? "VPS M" : "VPS S";
+    const planConfig = PAYSTACK_PLANS[planKey];
+
+    console.log("[Pay] Pay Now clicked", { planKey, keyConfigured: !!PAYSTACK_PUBLIC_KEY, keyFirstChars: PAYSTACK_PUBLIC_KEY.slice(0, 12) });
+
+    setPaying(true);
+
+    // If Paystack is not configured, fall back to simulation
+    if (!PAYSTACK_PUBLIC_KEY || PAYSTACK_PUBLIC_KEY.startsWith("pk_test_replace")) {
+      console.log("[Pay] Paystack not configured — using simulation mode");
       window.dispatchEvent(new CustomEvent("show-toast", {
-        detail: { title: "Paystack Not Configured", message: "Set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY in environment variables", type: "error", duration: 5000 },
+        detail: {
+          title: "Paystack Not Configured",
+          message: "Using simulation mode. Set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY & PAYSTACK_SECRET_KEY, then restart the dev server.",
+          type: "warning",
+          duration: 5000,
+        },
       }));
+
+      setTimeout(() => {
+        setPaidThisMonth(true);
+        setPaymentStatus("paid");
+        setPaying(false);
+        setNow(new Date());
+        console.log("[Pay] Simulation payment completed");
+        window.dispatchEvent(new CustomEvent("show-toast", {
+          detail: { title: "Payment Successful (Simulation)", message: `${planConfig.label} paid · ${planKey} subscription active`, type: "success", duration: 5000 },
+        }));
+      }, 1500);
       return;
     }
 
-    setPaying(true);
     try {
-      // Ensure SDK is loaded
-      await loadPaystackSDK();
+      // Load Paystack SDK
+      console.log("[Pay] Loading Paystack SDK...");
+      window.dispatchEvent(new CustomEvent("show-toast", {
+        detail: { title: "Loading Paystack...", message: "Opening secure payment popup", type: "info", duration: 2000 },
+      }));
 
-      // Get the user's email from a prompt (or from auth context if available)
+      await loadPaystackSDK();
+      console.log("[Pay] Paystack SDK loaded");
+
+      // Get email
       const email = window.prompt("Enter your email for payment receipt:") || "admin@mountainofdeliverance.org";
+      console.log("[Pay] Email:", email);
 
       // Initialize transaction on the server
-      const planKey = isUpgraded ? "VPS M" : "VPS S";
+      console.log("[Pay] Initializing transaction...");
+      window.dispatchEvent(new CustomEvent("show-toast", {
+        detail: { title: "Contacting Paystack...", message: "Initializing secure transaction", type: "info", duration: 3000 },
+      }));
+
       const res = await apiFetch("/api/paystack/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, plan: planKey }),
       });
 
+      console.log("[Pay] Initialize response status:", res.status);
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to initialize payment");
+        const errData = await res.json().catch(() => ({}));
+        console.error("[Pay] Initialize error:", errData);
+        throw new Error(errData.error || `Server error: ${res.status}`);
       }
 
-      const { access_code, reference } = await res.json();
-
-      // Open Paystack popup
-      const planConfig = PAYSTACK_PLANS[planKey];
+      const { authorization_url, access_code, reference } = await res.json();
+      console.log("[Pay] Transaction initialized", { reference, hasAuthUrl: !!authorization_url });
 
       // Open the Paystack checkout
-      const handler = (window as any).PaystackPop?.setup({
+      const popupHandler = (window as any).PaystackPop?.setup({
         key: PAYSTACK_PUBLIC_KEY,
         email,
-        amount: planConfig.amountKES * 100, // kobo
+        amount: planConfig.amountKES * 100,
         currency: "KES",
         ref: reference,
         metadata: {
@@ -257,7 +293,7 @@ export default function SubscriptionsTab() {
           church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "mountain_of_deliverance",
         },
         callback: async (response: { reference: string; trans: string }) => {
-          // Verify transaction on the server
+          console.log("[Pay] Paystack callback received", response);
           setPaying(true);
           try {
             const verifyRes = await apiFetch("/api/paystack/verify", {
@@ -267,18 +303,20 @@ export default function SubscriptionsTab() {
             });
 
             const verifyData = await verifyRes.json();
+            console.log("[Pay] Verify response:", verifyData);
 
             if (verifyData.verified) {
               setPaidThisMonth(true);
               setPaymentStatus("paid");
               setNow(new Date());
               window.dispatchEvent(new CustomEvent("show-toast", {
-                detail: { title: "Payment Successful", message: `${activePlan.priceKES} paid via Paystack · ${activePlan.name} active until next billing`, type: "success", duration: 5000 },
+                detail: { title: "Payment Successful", message: `${planConfig.label} paid via Paystack · ${planKey} active`, type: "success", duration: 5000 },
               }));
             } else {
               throw new Error("Payment verification failed");
             }
           } catch (err: any) {
+            console.error("[Pay] Verification error:", err);
             window.dispatchEvent(new CustomEvent("show-toast", {
               detail: { title: "Verification Error", message: err.message || "Could not verify payment", type: "error", duration: 4000 },
             }));
@@ -287,6 +325,7 @@ export default function SubscriptionsTab() {
           }
         },
         onClose: () => {
+          console.log("[Pay] Popup closed by user");
           setPaying(false);
           window.dispatchEvent(new CustomEvent("show-toast", {
             detail: { title: "Payment Cancelled", message: "You closed the payment window", type: "info", duration: 3000 },
@@ -294,15 +333,23 @@ export default function SubscriptionsTab() {
         },
       });
 
-      if (handler) {
-        handler.openIframe();
+      if (popupHandler) {
+        console.log("[Pay] Opening Paystack popup...");
+        popupHandler.openIframe();
       } else {
-        throw new Error("Paystack SDK not loaded");
+        console.error("[Pay] PaystackPop.setup returned falsy — falling back to redirect");
+        if (authorization_url) {
+          console.log("[Pay] Redirecting to:", authorization_url);
+          window.location.href = authorization_url;
+        } else {
+          throw new Error("Paystack SDK failed to load and no authorization URL available.");
+        }
       }
     } catch (err: any) {
+      console.error("[Pay] Fatal error:", err);
       setPaying(false);
       window.dispatchEvent(new CustomEvent("show-toast", {
-        detail: { title: "Payment Error", message: err.message || "Something went wrong", type: "error", duration: 4000 },
+        detail: { title: "Payment Error", message: err.message || "Something went wrong", type: "error", duration: 5000 },
       }));
     }
   }

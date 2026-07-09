@@ -25,20 +25,47 @@ export type PlanKey = keyof typeof PAYSTACK_PLANS;
 // Client SDK
 // ═══════════════════════════════════════════════
 
+const PAYSTACK_SDK_URL = "https://js.paystack.co/v1/inline.js";
+const SDK_LOAD_TIMEOUT = 8000; // 8 seconds
+
 /**
- * Dynamically load the Paystack inline JS SDK.
+ * Dynamically load the Paystack inline JS SDK with a timeout.
+ * If the CDN is unreachable or blocked, it rejects after 8s so the
+ * calling code can fall back gracefully.
  */
 export function loadPaystackSDK(): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Already loaded
     if ((window as any).PaystackPop) {
+      console.log("[Paystack] SDK already loaded");
       resolve();
       return;
     }
+
+    console.log("[Paystack] Loading SDK from", PAYSTACK_SDK_URL);
+
+    // Timeout guard
+    const timeout = setTimeout(() => {
+      console.warn("[Paystack] SDK load timed out after 8s — CDN may be blocked");
+      reject(new Error("Paystack SDK load timed out. Check your internet connection or firewall."));
+    }, SDK_LOAD_TIMEOUT);
+
     const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
+    script.src = PAYSTACK_SDK_URL;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Paystack SDK"));
+
+    script.onload = () => {
+      clearTimeout(timeout);
+      console.log("[Paystack] SDK loaded successfully");
+      resolve();
+    };
+
+    script.onerror = () => {
+      clearTimeout(timeout);
+      console.error("[Paystack] SDK script load error");
+      reject(new Error("Failed to load Paystack SDK. The CDN may be blocked by your network."));
+    };
+
     document.head.appendChild(script);
   });
 }
