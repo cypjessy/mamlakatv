@@ -48,7 +48,7 @@ export default function SplashScreen() {
         </div>
 
         {/* Brand name */}
-        <h1 className="splash-brand">MOUNTAIN OF DELIVERANCE CHURCH</h1>
+        <h1 className="splash-brand">MOUNTAIN OF DELIVERANCE</h1>
 
         {/* Tagline */}
         <p className="splash-tagline">Your Church, Everywhere</p>
