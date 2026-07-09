@@ -9,6 +9,7 @@ import {
 } from "@/lib/paystack";
 import {
   getSubscriptionStatus,
+  getPaymentHistory,
   recordPayment,
   computeBalance,
   getCurrentBillingPeriod,
@@ -17,6 +18,7 @@ import {
   getCountdown,
   PLAN_PRICES,
   type SubscriptionStatus,
+  type SubscriptionPayment,
 } from "@/lib/subscriptions";
 import { Timestamp } from "firebase/firestore";
 
@@ -128,6 +130,8 @@ export default function SubscriptionsTab() {
   const [paying, setPaying] = useState(false);
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
 
   // Tick every second for live countdown
   useEffect(() => {
@@ -150,6 +154,30 @@ export default function SubscriptionsTab() {
     load();
     const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Load payment history on mount
+  useEffect(() => {
+    async function loadPayments() {
+      try {
+        const history = await getPaymentHistory();
+        setPayments(history);
+      } catch {
+        // silent
+      } finally {
+        setLoadingPayments(false);
+      }
+    }
+    loadPayments();
+  }, []);
+
+  // Refresh payments after a successful payment
+  useEffect(() => {
+    function handler() {
+      getPaymentHistory().then(setPayments).catch(() => {});
+    }
+    window.addEventListener("payments-refresh", handler);
+    return () => window.removeEventListener("payments-refresh", handler);
   }, []);
 
   // Compute payment status based on Firestore + calendar
@@ -242,22 +270,22 @@ export default function SubscriptionsTab() {
 
       setTimeout(() => {
         // Save simulation payment to Firestore
-        const billingPeriod = getCurrentBillingPeriod();
-        recordPayment({
-          reference: `sim_${Date.now()}`,
-          amount: planConfig.amountKES,
-          plan: planKey as "VPS S" | "VPS M",
-          status: "paid",
-          paidAt: Timestamp.now(),
-          billingPeriod,
-          email: "admin@mountainofdeliverance.org",
-          channel: "simulation",
-          church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "mountain_of_deliverance",
-        }).then(() => {
-          getSubscriptionStatus().then(setSubStatus);
-        }).catch((err) => {
-          console.error("[Pay] Failed to save simulation payment:", err);
-        });
+        const billingPeriod = getCurrentBillingPeriod();            recordPayment({
+                  reference: `sim_${Date.now()}`,
+                  amount: planConfig.amountKES,
+                  plan: planKey as "VPS S" | "VPS M",
+                  status: "paid",
+                  paidAt: Timestamp.now(),
+                  billingPeriod,
+                  email: "admin@mountainofdeliverance.org",
+                  channel: "simulation",
+                  church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "mountain_of_deliverance",
+                }).then(() => {
+                  getSubscriptionStatus().then(setSubStatus);
+                  window.dispatchEvent(new CustomEvent("payments-refresh"));
+                }).catch((err) => {
+                  console.error("[Pay] Failed to save simulation payment:", err);
+                });
 
         setPaying(false);
         setNow(new Date());
@@ -346,6 +374,7 @@ export default function SubscriptionsTab() {
                 }).then(() => {
                   // Reload subscription status to reflect the new payment
                   getSubscriptionStatus().then(setSubStatus);
+                  window.dispatchEvent(new CustomEvent("payments-refresh"));
                 }).catch((err) => {
                   console.error("[Pay] Failed to save payment record:", err);
                 });
@@ -995,6 +1024,135 @@ export default function SubscriptionsTab() {
             }}>
               <i className="fas fa-shield-halved" style={{ marginRight: 4, fontSize: 10 }}></i>
               Secured via Paystack · Test mode active
+            </div>
+          )}
+        </div>
+
+        {/* ════ Payment History ════ */}
+        <div className="payments-card" style={{
+          background: "var(--surface-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "20px",
+          marginBottom: 20,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+              <i className="fas fa-receipt" style={{ color: "var(--text-tertiary)" }}></i>
+              Payment History
+            </div>
+            {!loadingPayments && (
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontWeight: 500 }}>
+                {payments.length} {payments.length === 1 ? "payment" : "payments"}
+              </div>
+            )}
+          </div>
+
+          {loadingPayments ? (
+            <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-tertiary)" }}>
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: 18, display: "block", marginBottom: 8 }}></i>
+              Loading payments…
+            </div>
+          ) : payments.length === 0 ? (
+            <div style={{
+              textAlign: "center",
+              padding: "32px 0",
+              color: "var(--text-tertiary)",
+              fontSize: 13,
+            }}>
+              <i className="fas fa-credit-card" style={{ fontSize: 28, display: "block", marginBottom: 10, opacity: 0.3 }}></i>
+              No payments recorded yet
+              <div style={{ fontSize: 11, marginTop: 4 }}>Payments will appear here after your first subscription payment</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {payments.map((pmt, i) => {
+                const paidDate = pmt.paidAt?.toDate();
+                const formattedDate = paidDate
+                  ? paidDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : "—";
+                const formattedTime = paidDate
+                  ? paidDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+                  : "";
+                const isSimulation = pmt.channel === "simulation";
+                return (
+                  <div key={pmt.id || i} style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "12px 14px",
+                    background: i % 2 === 0 ? "rgba(0,0,0,0.12)" : "transparent",
+                    borderRadius: "var(--radius-sm)",
+                    transition: "background 0.2s",
+                  }}>
+                    {/* Status icon */}
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "var(--radius-full)",
+                      background: isSimulation
+                        ? "rgba(232,168,56,0.12)"
+                        : "rgba(74,222,128,0.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      color: isSimulation ? "var(--primary)" : "#4ADE80",
+                      fontSize: 14,
+                    }}>
+                      {isSimulation ? (
+                        <i className="fas fa-flask"></i>
+                      ) : (
+                        <i className="fas fa-check-circle"></i>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                          {pmt.plan}
+                        </span>
+                        {isSimulation && (
+                          <span style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                            background: "rgba(232,168,56,0.15)",
+                            color: "var(--primary)",
+                          }}>SIM</span>
+                        )}
+                        <span style={{
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                          marginLeft: "auto",
+                        }}>
+                          {pmt.channel}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
+                        {formattedDate} {formattedTime}
+                        {pmt.reference && !isSimulation && (
+                          <span style={{ marginLeft: 8, fontFamily: "monospace", fontSize: 10 }}>
+                            · #{pmt.reference.slice(-8)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Amount */}
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#4ADE80" }}>
+                        KES {pmt.amount.toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
+                        {pmt.status}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
