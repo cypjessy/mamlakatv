@@ -565,7 +565,7 @@ export default function AdminAccountsPage() {
           )}
         </div>
         ) : (
-          <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+          <div className="content-scroll">
             <SubscriptionsTab />
           </div>
         )}

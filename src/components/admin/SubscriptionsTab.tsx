@@ -672,10 +672,6 @@ export default function SubscriptionsTab() {
     <>
       <style>{`
         /* ── Subscriptions Tab Styles ── */
-        .sub-scroll {
-          padding: 0 16px 100px;
-        }
-
         /* ── Server Cards ── */
         .server-grid {
           display: flex;
@@ -1054,7 +1050,7 @@ export default function SubscriptionsTab() {
         @keyframes fa-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       `}</style>
 
-      <div className="sub-scroll">
+      <div>
 
         {/* ════ Billing & Countdown (Firestore-backed) ════ */}
         <div className="billing-card" style={{
