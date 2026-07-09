@@ -9,9 +9,11 @@ import type { Timestamp } from "firebase/firestore";
 import { getAdminUsers } from "@/lib/users";
 import type { UserProfile } from "@/lib/users";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
+import SubscriptionsTab from "@/components/admin/SubscriptionsTab";
 
 export default function AdminAccountsPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"accounts" | "subscriptions">("accounts");
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -344,6 +346,84 @@ export default function AdminAccountsPage() {
           title="Admin Accounts"
         />
 
+        {/* ════ Tab Bar ════ */}
+        <div style={{
+          display: "flex",
+          borderBottom: "1px solid var(--border)",
+          flexShrink: 0,
+          background: "var(--bg)",
+          padding: "0 8px",
+          gap: 0,
+        }}>
+          <button
+            onClick={() => setActiveTab("accounts")}
+            style={{
+              flex: 1,
+              padding: "12px 6px",
+              background: "none",
+              border: "none",
+              color: activeTab === "accounts" ? "var(--primary)" : "var(--text-tertiary)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+            }}
+          >
+            <i className="fas fa-user-shield"></i>
+            Accounts
+            {activeTab === "accounts" && (
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: "15%",
+                right: "15%",
+                height: 3,
+                background: "var(--primary)",
+                borderRadius: "3px 3px 0 0",
+              }} />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("subscriptions")}
+            style={{
+              flex: 1,
+              padding: "12px 6px",
+              background: "none",
+              border: "none",
+              color: activeTab === "subscriptions" ? "var(--primary)" : "var(--text-tertiary)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+            }}
+          >
+            <i className="fas fa-server"></i>
+            Subscriptions
+            {activeTab === "subscriptions" && (
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: "15%",
+                right: "15%",
+                height: 3,
+                background: "var(--primary)",
+                borderRadius: "3px 3px 0 0",
+              }} />
+            )}
+          </button>
+        </div>
+
+        {activeTab === "accounts" ? (
         <div className="content-scroll">
           <div className="invite-card">
             <div className="invite-title"><i className="fas fa-link"></i> Invite New Admin</div>
@@ -388,6 +468,11 @@ export default function AdminAccountsPage() {
             ))
           )}
         </div>
+        ) : (
+          <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+            <SubscriptionsTab />
+          </div>
+        )}
       </div>
 
       <AdminBottomNav />
