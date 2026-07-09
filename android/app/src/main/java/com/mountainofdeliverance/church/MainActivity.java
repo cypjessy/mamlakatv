@@ -1,4 +1,4 @@
-package com.christianrevival.church;
+package com.mountainofdeliverance.church;
 
 import android.app.PictureInPictureParams;
 import android.content.pm.PackageManager;

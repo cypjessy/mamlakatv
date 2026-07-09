@@ -19,7 +19,7 @@ import type { AlbumEntry } from "@/lib/albumEntries";
 import { Timestamp } from "firebase/firestore";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
 
-const churchId = process.env.NEXT_PUBLIC_CHURCH_ID || "christian_revival_church";
+const churchId = process.env.NEXT_PUBLIC_CHURCH_ID || "mountain_of_deliverance";
 const categories = ["all", "events", "services", "community", "leadership", "facility"];
 const defaultAlbumTitles: Record<string, string> = {
   events: "Church Events",
