@@ -254,8 +254,8 @@ export default function SubscriptionsTab() {
       await loadPaystackSDK();
       console.log("[Pay] Paystack SDK loaded");
 
-      // Get email
-      const email = window.prompt("Enter your email for payment receipt:") || "admin@mountainofdeliverance.org";
+      // Use church admin email — no prompt needed
+      const email = "admin@mountainofdeliverance.org";
       console.log("[Pay] Email:", email);
 
       // Initialize transaction on the server
