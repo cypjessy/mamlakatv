@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import PlyrPlayer from "@/components/tv/PlyrPlayer";
 
@@ -45,11 +45,18 @@ export function TvPlayerProvider({ children }: { children: React.ReactNode }) {
   // Portal target — the DOM element to render the player into
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
+  // Guard against re-applying the same seek value (prevents infinite loops
+  // when registerTarget is called repeatedly during re-renders).
+  const lastAppliedSeekRef = useRef<number | undefined>(undefined);
+
   const registerTarget = useCallback((el: HTMLElement | null) => {
     setPortalTarget(el);
     // When a new target is registered and the player is already active,
-    // restore the latest seek so PlyrPlayer resumes at the correct position
-    if (el && videoId && latestSeekRef.current !== undefined) {
+    // restore the latest seek so PlyrPlayer resumes at the correct position.
+    // Only re-apply if the seek value actually changed since last time.
+    if (el && videoId && latestSeekRef.current !== undefined &&
+        latestSeekRef.current !== lastAppliedSeekRef.current) {
+      lastAppliedSeekRef.current = latestSeekRef.current;
       setSeek(latestSeekRef.current);
     }
   }, [videoId]);
@@ -90,10 +97,14 @@ export function TvPlayerProvider({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect();
   }, [portalTarget]);
 
+  // Stable context value — avoids forcing consumer re-renders when only
+  // unrelated internal state changes.
+  const ctxValue = useMemo<TvPlayerContextValue>(() => ({
+    registerTarget, play, hide, setCallbacks, visible, currentVideoId: videoId,
+  }), [registerTarget, play, hide, setCallbacks, visible, videoId]);
+
   return (
-    <TvPlayerContext.Provider
-      value={{ registerTarget, play, hide, setCallbacks, visible, currentVideoId: videoId }}
-    >
+    <TvPlayerContext.Provider value={ctxValue}>
       {/* Portal — renders PlyrPlayer into the page's target element (natural document flow) */}
       {visible && videoId && portalTarget && createPortal(
         <div

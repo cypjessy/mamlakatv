@@ -103,8 +103,10 @@ export default function TVPage() {
 
   const cachedSeek = typeof window !== "undefined" ? Number(localStorage.getItem(TV_SEEK_KEY)) || 0 : 0;
 
-  const tvPlayerTargetRef = useRef<HTMLDivElement>(null);
   const tvPlayer = useTvPlayer();
+  const tvPlayerTargetRef = useCallback((el: HTMLDivElement | null) => {
+    tvPlayer.registerTarget(el);
+  }, [tvPlayer.registerTarget]);
 
   // ─── Current playing video ───
   const currentVideo = tvUserState && tvUserState.playlist.length > 0
@@ -223,15 +225,7 @@ export default function TVPage() {
     }
   }, [tvUserState?.currentIndex]);
 
-  // Register portal target for the global player overlay
-  useEffect(() => {
-    if (tvPlayerTargetRef.current) {
-      tvPlayer.registerTarget(tvPlayerTargetRef.current);
-    }
-    return () => {
-      tvPlayer.registerTarget(null);
-    };
-  }, [currentVideo, tvPlayer]);
+  // Portal target registered via callback ref above — no useEffect needed.
 
   // Call play() when current video changes
   useEffect(() => {

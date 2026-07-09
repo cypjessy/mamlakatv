@@ -445,7 +445,6 @@ export default function DashboardPage() {
   const [tvStartCountdown, setTvStartCountdown] = useState(20);
   const lastTvSeekRef = useRef(0);
   const lastTvIndexRef = useRef(0);
-  const tvPlayerTargetRef = useRef<HTMLDivElement>(null);
   const tvPlayer = useTvPlayer();
   const { toggleFullscreen } = useFullscreenToggle();
 
@@ -475,15 +474,11 @@ export default function DashboardPage() {
     return () => clearInterval(t);
   }, []);
 
-  // Register portal target for the global player overlay
-  useEffect(() => {
-    if (tvPlayerTargetRef.current) {
-      tvPlayer.registerTarget(tvPlayerTargetRef.current);
-    }
-    return () => {
-      tvPlayer.registerTarget(null);
-    };
-  }, [tvCurrentVideo, tvPlayer]);
+  // Register portal target via callback ref — fires on mount/unmount regardless
+  // of conditional rendering timing.
+  const tvPlayerTargetRef = useCallback((el: HTMLDivElement | null) => {
+    tvPlayer.registerTarget(el);
+  }, [tvPlayer.registerTarget]);
 
   // Call play() when current video changes — skip if global player already on this video
   // (prevents stale Firestore seek from rewinding on Android page navigation).
