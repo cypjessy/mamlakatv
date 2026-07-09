@@ -149,6 +149,48 @@ export default function SubscriptionsTab() {
     return () => clearInterval(interval);
   }, []);
 
+  // ════ Upgrade Toggle ════
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [isUpgraded, setIsUpgraded] = useState(false);
+
+  const currentPlan = {
+    name: "VPS S",
+    cpu: "16 Cores",
+    ram: "64 GB",
+    storage: "300 GB NVMe / 600 GB SSD",
+    port: "1 Gbit/s",
+    traffic: "Unlimited*",
+    protection: "DDoS Protected",
+    priceKES: "KES 4,372",
+    priceEUR: "€29.60",
+  };
+
+  const upgradePlan = {
+    name: "VPS M",
+    cpu: "18 Cores",
+    ram: "96 GB",
+    storage: "350 GB NVMe / 700 GB SSD",
+    port: "1 Gbit/s",
+    traffic: "Unlimited*",
+    protection: "DDoS Protected",
+    priceKES: "KES 5,790",
+    priceEUR: "€39.20",
+  };
+
+  const activePlan = isUpgraded ? upgradePlan : currentPlan;
+
+  async function handleUpgrade() {
+    setUpgrading(true);
+    await new Promise((r) => setTimeout(r, 2500));
+    setIsUpgraded(true);
+    setUpgrading(false);
+    setPaidThisMonth(false); // reset billing for new price
+    window.dispatchEvent(new CustomEvent("show-toast", {
+      detail: { title: "Upgrade Successful", message: `Plan upgraded to ${upgradePlan.name} · ${upgradePlan.priceKES}/mo`, type: "success", duration: 4000 },
+    }));
+  }
+
   // Check if already paid this period
   useEffect(() => {
     // Reset paid status on the 11th of each month (after billing date)
@@ -166,7 +208,7 @@ export default function SubscriptionsTab() {
     setPaymentStatus("paid");
     setPaying(false);
     window.dispatchEvent(new CustomEvent("show-toast", {
-      detail: { title: "Payment Successful", message: "KES 4,372 paid · Server subscription active until next billing", type: "success", duration: 4000 },
+      detail: { title: "Payment Successful", message: `${activePlan.priceKES} paid · ${activePlan.name} subscription active until next billing`, type: "success", duration: 4000 },
     }));
     // Re-fetch countdown resets
     setNow(new Date());
@@ -634,10 +676,10 @@ export default function SubscriptionsTab() {
           {/* Amount */}
           <div style={{ marginBottom: 16, textAlign: "center" }}>
             <div style={{ fontSize: 32, fontWeight: 800, color: paidThisMonth ? "#4ADE80" : "var(--primary)", fontVariantNumeric: "tabular-nums" }}>
-              KES 4,372
+              {activePlan.priceKES}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
-              ≈ €29.60 · {currentMonth}
+              ≈ {activePlan.priceEUR} · {currentMonth}
             </div>
           </div>
 
@@ -714,7 +756,7 @@ export default function SubscriptionsTab() {
             ) : paidThisMonth ? (
               <><i className="fas fa-check-circle"></i> Paid for {currentMonth}</>
             ) : (
-              <>              <i className="fas fa-lock"></i> Pay Now — KES 4,372</>
+              <>              <i className="fas fa-lock"></i> Pay Now — {activePlan.priceKES}</>
             )}
           </button>
 
@@ -871,61 +913,201 @@ export default function SubscriptionsTab() {
           ))}
         </div>
 
-        {/* ════ VPS Specs ════ */}
+        {/* ════ VPS Specs — Plan Toggle ════ */}
         <div className="vps-card">
-          <div className="vps-header">
+          {/* Plan toggle tabs */}
+          <div style={{
+            display: "flex",
+            background: "rgba(0,0,0,0.2)",
+            borderRadius: "var(--radius-md)",
+            padding: 4,
+            marginBottom: 18,
+            position: "relative",
+          }}>
+            <button
+              onClick={() => !isUpgraded && setShowUpgrade(false)}
+              style={{
+                flex: 1,
+                padding: "10px",
+                border: "none",
+                borderRadius: 10,
+                background: !showUpgrade ? "var(--surface-elevated)" : "transparent",
+                color: !showUpgrade ? "var(--text-primary)" : "var(--text-tertiary)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.25s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fas fa-check-circle" style={{ color: "#4ADE80", fontSize: 11 }}></i>
+              Current — {currentPlan.name}
+            </button>
+            <button
+              onClick={() => setShowUpgrade(true)}
+              style={{
+                flex: 1,
+                padding: "10px",
+                border: "none",
+                borderRadius: 10,
+                background: showUpgrade ? "var(--surface-elevated)" : "transparent",
+                color: showUpgrade ? "var(--text-primary)" : "var(--text-tertiary)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.25s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fas fa-arrow-up" style={{ color: "var(--primary)", fontSize: 11 }}></i>
+              Upgrade — {upgradePlan.name}
+              {!isUpgraded && (
+                <span style={{
+                  fontSize: 9, padding: "2px 6px", borderRadius: 4,
+                  background: "rgba(232,168,56,0.15)",
+                  color: "var(--primary)",
+                }}>NEW</span>
+              )}
+            </button>
+          </div>
+
+          {/* Header */}
+          <div className="vps-header" style={{ marginBottom: 14 }}>
             <div className="vps-title">
               <i className="fas fa-server" style={{ color: "var(--primary)" }}></i>
-              Virtual Private Server
+              {showUpgrade && !isUpgraded ? `Upgrade to ${upgradePlan.name}` : isUpgraded ? upgradePlan.name : currentPlan.name}
             </div>
             <div className="vps-price">
-              KES 4,372 <small>/mo ≈ €29.60</small>
+              {activePlan.priceKES} <small>/mo ≈ {activePlan.priceEUR}</small>
             </div>
           </div>
-          <div className="vps-grid">
-            <div className="vps-spec">
+
+          {/* Specs */}
+          <div className="vps-grid" style={{ opacity: showUpgrade && !isUpgraded ? 0.6 : 1, transition: "opacity 0.3s" }}>
+            <div className="vps-spec" style={{ borderColor: showUpgrade && !isUpgraded ? "rgba(232,168,56,0.2)" : undefined }}>
               <div className="vps-spec-icon"><i className="fas fa-microchip"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">vCPU</div>
-                <div className="vps-spec-value">16 Cores</div>
+                <div className="vps-spec-value">{activePlan.cpu}</div>
               </div>
             </div>
             <div className="vps-spec">
               <div className="vps-spec-icon"><i className="fas fa-memory"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">RAM</div>
-                <div className="vps-spec-value">64 GB</div>
+                <div className="vps-spec-value">{activePlan.ram}</div>
               </div>
             </div>
             <div className="vps-spec">
               <div className="vps-spec-icon"><i className="fas fa-hard-drive"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">Storage</div>
-                <div className="vps-spec-value">300 GB NVMe / 600 GB SSD</div>
+                <div className="vps-spec-value">{activePlan.storage}</div>
               </div>
             </div>
             <div className="vps-spec">
               <div className="vps-spec-icon"><i className="fas fa-wifi"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">Port Speed</div>
-                <div className="vps-spec-value">1 Gbit/s</div>
+                <div className="vps-spec-value">{activePlan.port}</div>
               </div>
             </div>
             <div className="vps-spec">
               <div className="vps-spec-icon"><i className="fas fa-infinity"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">Traffic</div>
-                <div className="vps-spec-value">Unlimited*</div>
+                <div className="vps-spec-value">{activePlan.traffic}</div>
               </div>
             </div>
             <div className="vps-spec">
               <div className="vps-spec-icon"><i className="fas fa-shield-halved"></i></div>
               <div className="vps-spec-info">
                 <div className="vps-spec-label">Protection</div>
-                <div className="vps-spec-value">DDoS Protected</div>
+                <div className="vps-spec-value">{activePlan.protection}</div>
               </div>
             </div>
           </div>
+
+          {/* Upgrade CTA */}
+          {showUpgrade && !isUpgraded && (
+            <>
+              {/* Diff highlights */}
+              <div style={{
+                marginTop: 14,
+                padding: 12,
+                background: "rgba(232,168,56,0.06)",
+                border: "1px solid rgba(232,168,56,0.15)",
+                borderRadius: "var(--radius-sm)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", marginBottom: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                  <i className="fas fa-arrow-up"></i> What you get
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <span>+2 vCPU Cores</span>
+                  <span>+32 GB RAM</span>
+                  <span style={{ color: "var(--primary)", fontWeight: 600 }}>+KES 1,418/mo</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                style={{
+                  width: "100%",
+                  marginTop: 14,
+                  padding: "16px",
+                  border: "none",
+                  borderRadius: "var(--radius-md)",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: upgrading ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
+                  color: "#fff",
+                  opacity: upgrading ? 0.7 : 1,
+                }}
+              >
+                {upgrading ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Upgrading server…</>
+                ) : (
+                  <><i className="fas fa-rocket"></i> Upgrade Now — {upgradePlan.priceKES}/mo</>
+                )}
+              </button>
+            </>
+          )}
+
+          {/* Already upgraded banner */}
+          {isUpgraded && (
+            <div style={{
+              marginTop: 14,
+              padding: "12px 14px",
+              background: "rgba(74,222,128,0.08)",
+              border: "1px solid rgba(74,222,128,0.2)",
+              borderRadius: "var(--radius-sm)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              fontSize: 13,
+              color: "#4ADE80",
+              fontWeight: 600,
+            }}>
+              <i className="fas fa-check-circle" style={{ fontSize: 18 }}></i>
+              You are on the <strong style={{ margin: "0 4px" }}>{upgradePlan.name}</strong> plan
+            </div>
+          )}
 
           {/* Provider credit */}
           <div style={{
