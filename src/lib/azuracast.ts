@@ -36,15 +36,19 @@ export function getPublicPlayerUrl(): string {
 const STATION_ID = getStationId();
 
 export function getApiBase(): string {
-  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_AZURACAST_URL)
-    return process.env.NEXT_PUBLIC_AZURACAST_URL;
-  return "";
+  try {
+    return process.env.NEXT_PUBLIC_AZURACAST_URL || "";
+  } catch {
+    return "";
+  }
 }
 
 export function getApiKey(): string {
-  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_AZURACAST_API_KEY)
-    return process.env.NEXT_PUBLIC_AZURACAST_API_KEY;
-  return "";
+  try {
+    return process.env.NEXT_PUBLIC_AZURACAST_API_KEY || "";
+  } catch {
+    return "";
+  }
 }
 
 /** Return the API host for server-side route proxying. When set, the app
