@@ -292,37 +292,37 @@ export default function SubscriptionsTab() {
           plan: planKey,
           church_id: process.env.NEXT_PUBLIC_CHURCH_ID || "mountain_of_deliverance",
         },
-        callback: async (response: { reference: string; trans: string }) => {
+        callback: (response: { reference: string; trans: string }) => {
           console.log("[Pay] Paystack callback received", response);
           setPaying(true);
-          try {
-            const verifyRes = await apiFetch("/api/paystack/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reference: response.reference }),
-            });
-
-            const verifyData = await verifyRes.json();
-            console.log("[Pay] Verify response:", verifyData);
-
-            if (verifyData.verified) {
-              setPaidThisMonth(true);
-              setPaymentStatus("paid");
-              setNow(new Date());
+          // Use .then() instead of async/await because Paystack's type
+          // validation rejects AsyncFunction objects
+          apiFetch("/api/paystack/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reference: response.reference }),
+          })
+            .then((r) => r.json())
+            .then((verifyData: any) => {
+              console.log("[Pay] Verify response:", verifyData);
+              if (verifyData.verified) {
+                setPaidThisMonth(true);
+                setPaymentStatus("paid");
+                setNow(new Date());
+                window.dispatchEvent(new CustomEvent("show-toast", {
+                  detail: { title: "Payment Successful", message: `${planConfig.label} paid via Paystack · ${planKey} active`, type: "success", duration: 5000 },
+                }));
+              } else {
+                throw new Error("Payment verification failed");
+              }
+            })
+            .catch((err: any) => {
+              console.error("[Pay] Verification error:", err);
               window.dispatchEvent(new CustomEvent("show-toast", {
-                detail: { title: "Payment Successful", message: `${planConfig.label} paid via Paystack · ${planKey} active`, type: "success", duration: 5000 },
+                detail: { title: "Verification Error", message: err.message || "Could not verify payment", type: "error", duration: 4000 },
               }));
-            } else {
-              throw new Error("Payment verification failed");
-            }
-          } catch (err: any) {
-            console.error("[Pay] Verification error:", err);
-            window.dispatchEvent(new CustomEvent("show-toast", {
-              detail: { title: "Verification Error", message: err.message || "Could not verify payment", type: "error", duration: 4000 },
-            }));
-          } finally {
-            setPaying(false);
-          }
+            })
+            .finally(() => setPaying(false));
         },
         onClose: () => {
           console.log("[Pay] Popup closed by user");
