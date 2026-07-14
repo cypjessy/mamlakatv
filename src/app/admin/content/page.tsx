@@ -9,8 +9,9 @@ import { formatBytes, uploadFile } from "@/lib/bunny";
 import {
   getR2Videos, addR2Video, updateR2Video, deleteR2Video,
   getR2TvPlaylists, addR2TvPlaylist, deleteR2TvPlaylist,
+  getTvBumperConfig, saveTvBumperConfig, clearTvBumperConfig,
 } from "@/lib/r2Videos";
-import type { R2Video, R2TvPlaylist } from "@/lib/r2Videos";
+import type { R2Video, R2TvPlaylist, TvBumperConfig } from "@/lib/r2Videos";
 import {
   getGalleryPhotos, addGalleryPhoto, updateGalleryPhoto, deleteGalleryPhoto,
 } from "@/lib/content";
@@ -175,6 +176,12 @@ export default function AdminContentPage() {
   const [r2ScheduleSaving, setR2ScheduleSaving] = useState(false);
   const [r2ScheduleDeleting, setR2ScheduleDeleting] = useState<string | null>(null);
 
+  // Bumper config state
+  const [r2BumperConfig, setR2BumperConfig] = useState<TvBumperConfig | null>(null);
+  const [r2BumperLoading, setR2BumperLoading] = useState(false);
+  const [r2BumperSaving, setR2BumperSaving] = useState(false);
+  const [r2BumperSelectedId, setR2BumperSelectedId] = useState("");
+
   // Delete video confirmation
   const [deleteR2Target, setDeleteR2Target] = useState<string | null>(null);
 
@@ -244,6 +251,7 @@ export default function AdminContentPage() {
       fetchData();
       fetchR2Videos();
       fetchR2Playlists();
+      fetchTvBumperConfig();
     }, 0);
   }, [fetchData]);
 
@@ -760,6 +768,16 @@ export default function AdminContentPage() {
       setR2Playlists([]);
     }
     setR2PlaylistsLoading(false);
+  }
+
+  async function fetchTvBumperConfig() {
+    setR2BumperLoading(true);
+    try {
+      const config = await getTvBumperConfig();
+      setR2BumperConfig(config);
+      if (config) setR2BumperSelectedId(config.r2VideoId);
+    } catch {}
+    setR2BumperLoading(false);
   }
 
   function handleR2FileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1604,6 +1622,182 @@ export default function AdminContentPage() {
                 );
               })}
             </div>
+          )}
+        </div>
+
+        {/* ─── TV Bumper Animation ─── */}
+        <div style={{ borderTop: "1px solid var(--border)", margin: "16px 16px 8px" }}></div>
+        <div style={{ padding: "8px 16px 40px" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="fas fa-clapperboard" style={{ color: "var(--primary)" }}></i>
+            TV Bumper Animation
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 12, lineHeight: 1.5 }}>
+            The bumper is a short logo animation that plays when users open the TV page and interrupts every 15 minutes during playback. Select a short video (3–10 seconds) from your uploaded videos below.
+          </div>
+
+          {r2BumperLoading ? (
+            <div className="loading-state" style={{ padding: "16px 0" }}><i className="fas fa-spinner fa-spin"></i></div>
+          ) : (
+            <>
+              <div style={{
+                padding: 16, borderRadius: "var(--radius-md)",
+                background: "var(--surface-card)", border: "1px solid var(--border)",
+                display: "flex", flexDirection: "column", gap: 12,
+              }}>
+                {/* Current bumper status */}
+                {r2BumperConfig ? (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: 10, borderRadius: "var(--radius-sm)",
+                    background: "rgba(232,168,56,0.06)", border: "1px solid rgba(232,168,56,0.12)",
+                  }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: "linear-gradient(135deg, rgba(232,168,56,0.12), rgba(232,168,56,0.04))",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, color: "var(--primary)", flexShrink: 0,
+                    }}>
+                      <i className="fas fa-check-circle"></i>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{r2BumperConfig.r2VideoTitle}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>Active bumper animation</div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Remove the TV bumper animation?")) return;
+                        setR2BumperSaving(true);
+                        try {
+                          await clearTvBumperConfig();
+                          setR2BumperConfig(null);
+                          setR2BumperSelectedId("");
+                          window.dispatchEvent(new CustomEvent("show-toast", {
+                            detail: { title: "Bumper Removed", message: "TV bumper animation cleared", type: "success", duration: 2500 },
+                          }));
+                        } catch {}
+                        setR2BumperSaving(false);
+                      }}
+                      style={{
+                        width: 28, height: 28, borderRadius: "50%",
+                        background: "rgba(239,68,68,0.08)", border: "none",
+                        color: "var(--error)", fontSize: 12, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}
+                    >
+                      <i className="fas fa-xmark"></i>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: 10, borderRadius: "var(--radius-sm)",
+                    border: "1px dashed var(--border)",
+                  }}>
+                    <i className="fas fa-circle-info" style={{ color: "var(--text-tertiary)", fontSize: 14 }}></i>
+                    <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>No bumper set. Select a video below and save.</span>
+                  </div>
+                )}
+
+                {/* Bumper video selector */}
+                {r2Videos.length > 0 && (
+                  <>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label"><i className="fas fa-video"></i> Select Bumper Video</label>
+                      <select
+                        className="form-input"
+                        value={r2BumperSelectedId}
+                        onChange={(e) => setR2BumperSelectedId(e.target.value)}
+                      >
+                        <option value="">— Choose a video —</option>
+                        {r2Videos.filter((v) => !v.isHidden).map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.title} {v.duration > 0 ? `(${formatDuration(v.duration)})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Preview selected bumper video */}
+                    {r2BumperSelectedId && (() => {
+                      const v = r2Videos.find((vid) => vid.id === r2BumperSelectedId);
+                      if (!v) return null;
+                      const isSame = r2BumperConfig?.r2VideoId === v.id;
+                      return (
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: 10, borderRadius: "var(--radius-sm)",
+                          background: "var(--surface)", border: "1px solid var(--border)",
+                        }}>
+                          <div className="pl-selected-thumb" style={{
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: "linear-gradient(135deg, rgba(232,168,56,0.1), rgba(232,168,56,0.04))",
+                            fontSize: 18, color: "var(--primary)", width: 48, height: 32,
+                          }}>
+                            <i className="fas fa-video"></i>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600 }}>{v.title}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                              {formatDuration(v.duration)} · {v.category}
+                            </div>
+                          </div>
+                          {isSame ? (
+                            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--success)" }}>
+                              <i className="fas fa-check"></i> Active
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+
+                    <button
+                      className="btn-primary small"
+                      onClick={async () => {
+                        if (!r2BumperSelectedId) return;
+                        const v = r2Videos.find((vid) => vid.id === r2BumperSelectedId);
+                        if (!v) return;
+                        setR2BumperSaving(true);
+                        try {
+                          await saveTvBumperConfig({
+                            r2VideoId: v.id,
+                            r2VideoUrl: v.url,
+                            r2VideoTitle: v.title,
+                          });
+                          setR2BumperConfig({
+                            r2VideoId: v.id,
+                            r2VideoUrl: v.url,
+                            r2VideoTitle: v.title,
+                            updatedAt: null,
+                          });
+                          window.dispatchEvent(new CustomEvent("show-toast", {
+                            detail: { title: "Bumper Set!", message: `"${v.title}" will play on TV entry and every 15 minutes`, type: "success", duration: 3000 },
+                          }));
+                        } catch {
+                          window.dispatchEvent(new CustomEvent("show-toast", {
+                            detail: { title: "Error", message: "Could not save bumper config", type: "error", duration: 3000 },
+                          }));
+                        }
+                        setR2BumperSaving(false);
+                      }}
+                      disabled={r2BumperSaving || !r2BumperSelectedId}
+                    >
+                      {r2BumperSaving ? (
+                        <><i className="fas fa-spinner fa-spin"></i> Saving...</>
+                      ) : (
+                        <><i className="fas fa-save"></i> Set as TV Bumper</>
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {r2Videos.length === 0 && (
+                  <div style={{ padding: "8px 0", fontSize: 12, color: "var(--text-tertiary)", textAlign: "center" }}>
+                    Upload a short video above first to use as the bumper animation.
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

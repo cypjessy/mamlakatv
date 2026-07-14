@@ -230,12 +230,34 @@ export default function TVPage() {
 
   // Portal target registered via callback ref above — no useEffect needed.
 
-  // Call play() when current video changes
+  // ─── Bumper entry logic ───
+  const bumperPlayedOnceRef = useRef(false);
+  const [bumperEntryReady, setBumperEntryReady] = useState(false);
+
   useEffect(() => {
-    if (currentVideo) {
+    if (!loading && tvPlayer.bumperConfig && !bumperPlayedOnceRef.current) {
+      // Entry bumper: trigger bumper first, then play will resume after it ends
+      bumperPlayedOnceRef.current = true;
+      setBumperEntryReady(true);
+      // Small delay to ensure player is mounted
+      setTimeout(() => tvPlayer.triggerBumper(), 100);
+    }
+  }, [loading, tvPlayer.bumperConfig]);
+
+  // When bumper finishes playing (entry bumper), start the main video
+  useEffect(() => {
+    if (bumperEntryReady && !tvPlayer.isBumperPlaying && currentVideo) {
+      setBumperEntryReady(false);
       tvPlayer.play(currentVideo.id, currentSeek);
     }
-  }, [currentVideo?.id, currentSeek, tvPlayer]);
+  }, [tvPlayer.isBumperPlaying, bumperEntryReady, currentVideo?.id, currentSeek]);
+
+  // Call play() when current video changes (skip if entry bumper is pending)
+  useEffect(() => {
+    if (currentVideo && !bumperEntryReady) {
+      tvPlayer.play(currentVideo.id, currentSeek);
+    }
+  }, [currentVideo?.id, currentSeek, tvPlayer, bumperEntryReady]);
 
   // ─── Initial load: fetch channel + user's TV state + only playlist videos ───
   useEffect(() => {

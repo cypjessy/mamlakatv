@@ -119,3 +119,42 @@ export async function updateR2TvPlaylist(
 ): Promise<void> {
   await setDoc(doc(db, PLAYLIST_COL, id), data, { merge: true });
 }
+
+/* ─── TV Bumper Config (logo animation) ──────────────────── */
+
+export interface TvBumperConfig {
+  r2VideoId: string;
+  r2VideoUrl: string;
+  r2VideoTitle: string;
+  updatedAt: Date | null;
+}
+
+const BUMPER_DOC = doc(db, "tv_config", "bumper");
+
+/**
+ * Get the current TV bumper configuration.
+ */
+export async function getTvBumperConfig(): Promise<TvBumperConfig | null> {
+  const snap = await getDoc(BUMPER_DOC);
+  if (!snap.exists()) return null;
+  return snap.data() as TvBumperConfig;
+}
+
+/**
+ * Save a TV bumper video (brand logo animation).
+ */
+export async function saveTvBumperConfig(
+  data: Omit<TvBumperConfig, "updatedAt">
+): Promise<void> {
+  await setDoc(BUMPER_DOC, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Remove the TV bumper config (disable bumpers).
+ */
+export async function clearTvBumperConfig(): Promise<void> {
+  await deleteDoc(BUMPER_DOC);
+}
