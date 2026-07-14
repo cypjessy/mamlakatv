@@ -30,6 +30,8 @@ const s3Client = new S3Client({
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
   forcePathStyle: true,
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 /** Public URL prefix (R2 public bucket or custom domain) */
