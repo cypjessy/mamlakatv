@@ -324,6 +324,13 @@ export default function AdminTVPage() {
     }
   }, [currentVideo?.id, adminTvPlayer, isEntryBumperPlaying]);
 
+  // Hide player when admin TV has nothing to play (prevents stale YouTube state)
+  useEffect(() => {
+    if (!loading && !currentVideo && !isEntryBumperPlaying) {
+      adminTvPlayer.hide();
+    }
+  }, [loading, currentVideo?.id, isEntryBumperPlaying, adminTvPlayer]);
+
   // Keep callbacks in sync
   useEffect(() => {
     adminTvPlayer.setCallbacks({
