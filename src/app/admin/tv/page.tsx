@@ -85,6 +85,11 @@ export default function AdminTVPage() {
     isEntryBumperPlayingRef.current = isEntryBumperPlaying;
   }, [isEntryBumperPlaying]);
 
+  // Immediately hide stale player state from previous pages on mount
+  useEffect(() => {
+    adminTvPlayer.hide();
+  }, [adminTvPlayer]);
+
   // Load R2 videos + playlists + admin TV state from Firestore on mount
   useEffect(() => {
     let mounted = true;
