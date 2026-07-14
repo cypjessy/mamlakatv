@@ -770,6 +770,67 @@ export default function AdminContentPage() {
     }
   }
 
+  /**
+   * Capture a thumbnail frame from a video file using a hidden <video> element.
+   * Seeks to ~10 seconds (or 10% if shorter) and captures a JPEG frame.
+   */
+  async function captureVideoFrame(file: File): Promise<Blob | null> {
+    try {
+      const url = URL.createObjectURL(file);
+      const video = document.createElement("video");
+      video.src = url;
+      video.preload = "auto";
+      video.muted = true;
+      video.playsInline = true;
+
+      // Wait for metadata to load
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve();
+        video.onerror = () => reject(new Error("Failed to load video"));
+        // Timeout fallback (10 seconds)
+        setTimeout(() => {
+          if (!video.videoWidth) reject(new Error("Video load timeout"));
+          else resolve();
+        }, 30000);
+      });
+
+      // Seek to ~10 seconds or 10% of duration, whichever is smaller
+      const seekTime = Math.min(10, video.duration * 0.1);
+      video.currentTime = seekTime > 0.5 ? seekTime : 0.5;
+
+      // Wait for seek to complete
+      await new Promise<void>((resolve) => {
+        video.onseeked = () => resolve();
+        // Fallback: resolve after 3 seconds even if seek event doesn't fire
+        setTimeout(() => resolve(), 3000);
+      });
+
+      // Capture frame to canvas
+      const canvas = document.createElement("canvas");
+      // Target thumbnail size: 640px wide
+      const targetWidth = 640;
+      const aspect = video.videoWidth / video.videoHeight;
+      canvas.width = targetWidth;
+      canvas.height = Math.round(targetWidth / aspect);
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to JPEG blob at 80% quality
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), "image/jpeg", 0.8);
+      });
+
+      // Cleanup
+      URL.revokeObjectURL(url);
+      video.remove();
+      return blob;
+    } catch {
+      return null;
+    }
+  }
+
   async function handleR2Upload() {
     if (!r2SelectedFile) {
       window.dispatchEvent(new CustomEvent("show-toast", {
@@ -805,6 +866,41 @@ export default function AdminContentPage() {
     const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB
 
     try {
+      // ═══ Auto-generate thumbnail ═══
+      let thumbnailUrl = "";
+      try {
+        const thumbBlob = await captureVideoFrame(file);
+        if (thumbBlob && thumbBlob.size > 1000) {
+          // Upload thumbnail to R2
+          const thumbPresignRes = await fetch("/api/r2/presign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: `thumb_${file.name.replace(/\.[^/.]+$/, "")}.jpg`,
+              contentType: "image/jpeg",
+              folder: "thumbnails",
+            }),
+          });
+          if (thumbPresignRes.ok) {
+            const thumbData = await thumbPresignRes.json();
+            await new Promise<void>((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open("PUT", thumbData.presignedUrl, true);
+              xhr.setRequestHeader("Content-Type", "image/jpeg");
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) resolve();
+                else reject();
+              };
+              xhr.onerror = () => reject();
+              xhr.send(thumbBlob);
+            });
+            thumbnailUrl = thumbData.publicUrl;
+          }
+        }
+      } catch {
+        // Thumbnail failure is non-fatal — proceed without one
+      }
+
       let key: string;
       let url: string;
 
@@ -912,7 +1008,7 @@ export default function AdminContentPage() {
 
       setR2UploadProgress(100);
 
-      // Save video metadata to Firestore
+      // Save video metadata to Firestore (with thumbnail URL)
       await addR2Video({
         title,
         description,
@@ -922,7 +1018,7 @@ export default function AdminContentPage() {
         contentType: file.type || "video/mp4",
         originalName: file.name,
         duration,
-        thumbnail: "",
+        thumbnail: thumbnailUrl,
         category,
         isFeatured: false,
         isHidden: false,

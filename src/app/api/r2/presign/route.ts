@@ -3,7 +3,7 @@
  * Generate a presigned PUT URL so the client can upload directly to R2.
  * Supports files up to 5GB.
  *
- * Request:  { fileName: string, contentType: string }
+ * Request:  { fileName: string, contentType: string, folder?: string }
  * Response: { key: string, presignedUrl: string, publicUrl: string }
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +11,7 @@ import { getPresignedUploadUrl, R2_PUBLIC_URL } from "@/lib/r2";
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileName, contentType } = await request.json();
+    const { fileName, contentType, folder } = await request.json();
 
     if (!fileName) {
       return NextResponse.json({ error: "fileName is required" }, { status: 400 });
@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
     // Generate a unique key
     const ext = fileName.split(".").pop() || "mp4";
     const uuid = crypto.randomUUID();
-    const key = `videos/${uuid}.${ext}`;
+    const prefix = folder || "videos";
+    const key = `${prefix}/${uuid}.${ext}`;
 
     // Presigned URL valid for 2 hours (7200 seconds)
     const presignedUrl = await getPresignedUploadUrl(key, contentType || "video/mp4", 7200);
