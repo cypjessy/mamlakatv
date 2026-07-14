@@ -365,6 +365,8 @@ export default function AdminTVPage() {
     // Don't save during entry bumper — would overwrite real progress with bumper's seek
     if (isEntryBumperPlayingRef.current) return;
     const seek = lastAdminTvSeekRef.current;
+    // Don't save seek=0 on first mount — would overwrite real progress
+    if (seek <= 0.1) return;
     const index = lastAdminTvIndexRef.current;
     saveAdminTvState(uid, {
       activePlaylistId,
