@@ -15,13 +15,14 @@ import AlbumCarousel from "@/components/shared/AlbumCarousel";
 import { useImageLightbox } from "@/components/shared/ImageLightbox";
 import PremiumLoader from "@/components/shared/PremiumLoader";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
+import LiveTvEmbed from "@/components/shared/LiveTvEmbed";
 import { getNowPlaying, getSongHistory, getStationId, getPlaylists } from "@/lib/azuracast";
 import { getAlbums } from "@/lib/albums";
 import { getAllAlbumEntries } from "@/lib/albumEntries";
 import { useAudio } from "@/lib/audio/AudioContext";
 import { usePlayConfig } from "@/lib/playControls";
-import { getR2Videos } from "@/lib/r2Videos";
-import type { R2Video } from "@/lib/r2Videos";
+import { getVideos } from "@/lib/youtube";
+import type { YouTubeVideo } from "@/lib/youtube";
 import type { NowPlayingData, SongHistoryItem, Playlist } from "@/lib/azuracast";
 import type { Album } from "@/lib/albums";
 import type { AlbumEntry } from "@/lib/albumEntries";
@@ -422,8 +423,8 @@ export default function DashboardPage() {
   const [contentReady, setContentReady] = useState(false);
 
   // ─── Video Gallery ───
-  const [recentVideos, setRecentVideos] = useState<R2Video[]>([]);
-  const [weeklyVideos, setWeeklyVideos] = useState<R2Video[]>([]);
+  const [recentVideos, setRecentVideos] = useState<YouTubeVideo[]>([]);
+  const [weeklyVideos, setWeeklyVideos] = useState<YouTubeVideo[]>([]);
   const [videoGalleryLoading, setVideoGalleryLoading] = useState(true);
 
   // Delay full content render to prevent ANR on Android WebView
@@ -548,12 +549,12 @@ export default function DashboardPage() {
     let mounted = true;
     const fetchVideos = async () => {
       try {
-        const allVids = await getR2Videos({ includeHidden: false }).catch<R2Video[]>(() => []);
+        const allVids = await getVideos({ includeHidden: false }).catch<YouTubeVideo[]>(() => []);
         if (!mounted) return;
-        // Recent: sort by uploadedAt descending, take 15
+        // Recent: sort by publishedAt descending, take 15
         const sorted = [...allVids].sort((a, b) => {
-          const aTime = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
-          const bTime = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+          const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+          const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
           return bTime - aTime;
         });
         setRecentVideos(sorted.slice(0, 15));
@@ -637,27 +638,8 @@ export default function DashboardPage() {
       )}
 
 
-      {/* ===== LIVE TV (Odysee Embed) ===== */}
-      <div className="live-tv-embed-section">
-        <div className="live-tv-header">
-          <div className="live-tv-header-left">
-            <i className="fas fa-tv"></i>
-            <span>Live TV</span>
-          </div>
-          <button className="live-tv-manage-btn" onClick={() => router.push("/tv")}>
-            Watch <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-        <div className="live-tv-embed-wrap">
-          <iframe
-            src="https://odysee.com/$/embed/@otvlive:a/gib254:2?autoplay=true"
-            className="live-tv-iframe"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            title="Live TV"
-          ></iframe>
-        </div>
-      </div>
+      {/* ===== LIVE TV (served from Vercel on APK, direct on web) ===== */}
+      <LiveTvEmbed navTo="/tv" />
 
       {/* ===== PREMIUM RADIO HERO CARD ===== */}{/* ===== PREMIUM RADIO HERO CARD ===== */}      {/* ===== PREMIUM RADIO HERO CARD ===== */}
       <section className="feed-section">

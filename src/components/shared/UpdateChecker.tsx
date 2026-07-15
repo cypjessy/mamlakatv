@@ -24,18 +24,56 @@ export default function UpdateChecker() {
   // ── Get native app version via Capacitor ──
   useEffect(() => {
     let mounted = true;
-    const init = async () => {
+    let attempts = 0;
+    const tryGetVersion = async (): Promise<void> => {
+      attempts++;
       try {
         const { Device } = await import("@capacitor/device");
         const info = await Device.getInfo() as unknown as { appBuild: string; appVersion: string };
         const code = parseInt(info.appBuild, 10);
-        if (mounted && !isNaN(code) && code > 0) setCurrentCode(code);
+        if (mounted && !isNaN(code) && code > 0) {
+          setCurrentCode(code);
+          setReady(true);
+          return;
+        }
       } catch {
-        // Not running on native — no version available, suppress prompt
+        // Capacitor not available — may be retried below
       }
-      if (mounted) setReady(true);
+      // Fallback: check if Capacitor is available globally and try Plugin.Device
+      try {
+        const cap = (window as any).Capacitor;
+        if (cap?.Plugins?.Device?.getInfo) {
+          const info = await cap.Plugins.Device.getInfo() as { appBuild?: string; appVersion?: string };
+          const code = parseInt(info?.appBuild || "", 10);
+          if (mounted && !isNaN(code) && code > 0) {
+            setCurrentCode(code);
+            setReady(true);
+            return;
+          }
+        }
+      } catch {}
+      // Check user agent for Capacitor build info
+      try {
+        const ua = navigator.userAgent;
+        // Some Capacitor builds embed version in user agent
+        const buildMatch = ua.match(/build\/(\d+)/i);
+        if (buildMatch) {
+          const code = parseInt(buildMatch[1], 10);
+          if (mounted && !isNaN(code) && code > 0) {
+            setCurrentCode(code);
+            setReady(true);
+            return;
+          }
+        }
+      } catch {}
+      // Retry with backoff if still mounted and not exhausted
+      if (attempts < 3 && mounted) {
+        setTimeout(tryGetVersion, 1500 * attempts);
+      } else {
+        if (mounted) setReady(true);
+      }
     };
-    init();
+    tryGetVersion();
     return () => { mounted = false; };
   }, []);
 

@@ -7,9 +7,13 @@ import {
   getGivingConfig, saveGivingConfig,
   replyToPrayer,
   getLiveStatus, setLiveStream, endLiveStream,
+  getChannel, saveChannel,
+  getVideos, saveVideos, clearAllVideos,
+  getVideoCount,
 } from "@/lib/youtube";
 import type { LiveStatus } from "@/lib/youtube";
 import type { TVGivingConfig } from "@/lib/youtube";
+import type { YouTubeChannel, YouTubeVideo } from "@/lib/youtube";
 import {
   getR2Videos, getR2Video,
   getR2TvPlaylists, addR2TvPlaylist, updateR2TvPlaylist,
@@ -41,6 +45,13 @@ export default function AdminTVPage() {
   const [loading, setLoading] = useState(true);
 
 
+
+  // ─── YouTube Sync state ───
+  const [ytChannel, setYtChannel] = useState<YouTubeChannel | null>(null);
+  const [ytVideosCount, setYtVideosCount] = useState(0);
+  const [ytSyncing, setYtSyncing] = useState(false);
+  const [ytConnectUrl, setYtConnectUrl] = useState("");
+  const [ytConnecting, setYtConnecting] = useState(false);
 
   // ─── R2 Videos state ───
   const [allVideos, setAllVideos] = useState<R2Video[]>([]);
@@ -217,6 +228,109 @@ export default function AdminTVPage() {
     }
     setLiveSaving(false);
   }, []);
+
+  // ─── YouTube Sync handlers ───
+  const loadYtChannel = useCallback(async () => {
+    try {
+      const ch = await getChannel();
+      setYtChannel(ch);
+      if (ch) {
+        const count = await getVideoCount();
+        setYtVideosCount(count);
+      }
+    } catch {}
+  }, []);
+
+  // Load YouTube channel on mount
+  useEffect(() => {
+    loadYtChannel();
+  }, [loadYtChannel]);
+
+  const handleYtConnect = useCallback(async () => {
+    const url = ytConnectUrl.trim();
+    if (!url) {
+      showToast("Channel ID Required", "Enter a YouTube channel ID or URL", "error", 3000);
+      return;
+    }
+    // Extract channel ID from URL or use as-is
+    let channelId = url;
+    // Check for youtube.com/channel/ID format
+    const channelMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
+    if (channelMatch) channelId = channelMatch[1];
+    // Check for youtube.com/@handle format — preserve the @ for API forHandle lookup
+    const handleMatch = url.match(/youtube\.com\/@([a-zA-Z0-9_-]+)/);
+    if (handleMatch) channelId = "@" + handleMatch[1];
+    // If the user pasted a raw @handle, pass it through
+    if (url.startsWith("@")) channelId = url;
+
+    setYtConnecting(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/youtube/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ channelId }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Sync failed");
+      }
+      const data = await res.json();
+
+      // Save channel to Firestore
+      await saveChannel(data.channel);
+
+      // Save videos to Firestore
+      if (data.videos.length > 0) {
+        await clearAllVideos();
+        await saveVideos(data.videos);
+      }
+
+      setYtChannel(data.channel);
+      setYtVideosCount(data.videos.length);
+      setYtConnectUrl("");
+      showToast("YouTube Connected", `Channel "${data.channel.title}" synced with ${data.videos.length} videos`, "success", 4000);
+    } catch (err: any) {
+      showToast("Connection Failed", err.message || "Could not connect to YouTube", "error", 4000);
+    }
+    setYtConnecting(false);
+  }, [ytConnectUrl]);
+
+  const handleYtSyncNow = useCallback(async () => {
+    if (!ytChannel?.channelId) return;
+    setYtSyncing(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/youtube/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ channelId: ytChannel.channelId }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Sync failed");
+      }
+      const data = await res.json();
+
+      // Save/update channel (preserving isHidden, isFeatured edits via merge)
+      await saveChannel(data.channel);
+
+      // Save videos to Firestore (overwrites with fresh data)
+      if (data.videos.length > 0) {
+        // Use clearAllVideos + saveVideos for clean overwrite
+        await clearAllVideos();
+        await saveVideos(data.videos);
+      }
+
+      // Update local state
+      setYtChannel(data.channel);
+      setYtVideosCount(data.videos.length);
+      showToast("Sync Complete", `Found ${data.videos.length} videos from "${data.channel.title}"`, "success", 4000);
+    } catch (err: any) {
+      showToast("Sync Failed", err.message || "Could not sync with YouTube", "error", 4000);
+    }
+    setYtSyncing(false);
+  }, [ytChannel]);
 
   // Filter videos by search
   const filteredVideos = videoSearch
@@ -589,6 +703,123 @@ export default function AdminTVPage() {
     const featuredCount = allVideos.filter(v => v.isFeatured).length;
     return (
       <>
+        {/* ─── YouTube Sync Section ─── */}
+        <div className="yt-sync-section" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="fab fa-youtube" style={{ color: "#FF0000" }}></i>
+            YouTube Video Library
+          </div>
+
+          {ytChannel ? (
+            /* Connected state — show channel info + sync button */
+            <div style={{
+              background: "var(--surface-card)", border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)", padding: 14,
+              display: "flex", flexDirection: "column", gap: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {ytChannel.thumbnail ? (
+                  <img
+                    src={ytChannel.thumbnail}
+                    alt={ytChannel.title}
+                    style={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      objectFit: "cover", border: "2px solid var(--border)",
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: "rgba(255,0,0,0.1)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 20, color: "#FF0000",
+                  }}>
+                    <i className="fab fa-youtube"></i>
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {ytChannel.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span><i className="fas fa-users"></i> {parseInt(ytChannel.subscriberCount).toLocaleString()} subscribers</span>
+                    <span><i className="fas fa-video"></i> {ytVideosCount} videos synced</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="btn-outline small"
+                  onClick={handleYtSyncNow}
+                  disabled={ytSyncing}
+                  style={{ flex: 1 }}
+                >
+                  {ytSyncing ? (
+                    <><i className="fas fa-spinner fa-spin"></i> Syncing...</>
+                  ) : (
+                    <><i className="fas fa-sync"></i> Sync Now</>
+                  )}
+                </button>
+              </div>
+              {ytSyncing && (
+                <div style={{
+                  width: "100%", height: 3, background: "var(--surface-elevated)", borderRadius: 2, overflow: "hidden",
+                }}>
+                  <div style={{
+                    width: "60%", height: "100%",
+                    background: "linear-gradient(90deg, #FF0000, #FF4444)",
+                    borderRadius: 2,
+                    animation: "ytSyncProgress 1.5s ease-in-out infinite",
+                  }}></div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Not connected — show connect form */
+            <div style={{
+              background: "var(--surface-card)", border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)", padding: 14,
+              display: "flex", flexDirection: "column", gap: 10,
+            }}>
+              <div style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
+                <i className="fas fa-circle-info" style={{ color: "var(--primary)" }}></i>
+                {' '}Connect your church's YouTube channel to pull videos for the member dashboard and TV playlist. Videos will be displayed in the "Recently Added" and "This Week's Playlist" sections.
+              </div>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="YouTube Channel ID or URL"
+                value={ytConnectUrl}
+                onChange={(e) => setYtConnectUrl(e.target.value)}
+                disabled={ytConnecting}
+              />
+              <button
+                className="btn-primary small"
+                onClick={handleYtConnect}
+                disabled={ytConnecting || !ytConnectUrl.trim()}
+                style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+              >
+                {ytConnecting ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Connecting...</>
+                ) : (
+                  <><i className="fab fa-youtube"></i> Connect YouTube Channel</>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <style>{`
+          @keyframes ytSyncProgress {
+            0% { width: 10%; }
+            50% { width: 70%; }
+            100% { width: 10%; }
+          }
+        `}</style>
+
+        {/* ─── Divider ─── */}
+        <div style={{ borderTop: "1px solid var(--border)", marginBottom: 16 }}></div>
+
         {/* ─── Stats ─── */}
         <div className="stats-grid">
           <div className="stat-card">

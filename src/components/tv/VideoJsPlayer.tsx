@@ -60,13 +60,15 @@ export default function VideoJsPlayer({
     };
   }, []);
 
-  // Handle source changes — React manages the `src` attribute on the <video> element.
-  // We only need to call play() for autoplay. No need for vid.load() since the
-  // browser automatically starts loading when the src attribute changes.
+  // Handle source changes — ensure muted before play() for Android WebView compatibility.
+  // Android Chrome blocks autoplay for non-muted videos, even with
+  // setMediaPlaybackRequiresUserGesture(false). Starting muted bypasses this
+  // restriction. Users can unmute via the native controls.
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid || !sourceUrl) return;
     if (autoplay) {
+      vid.muted = true;
       vid.play().catch(() => {});
     }
   }, [sourceUrl, autoplay]);
@@ -106,6 +108,7 @@ export default function VideoJsPlayer({
         src={sourceUrl}
         controls={controls}
         autoPlay={autoplay}
+        muted={autoplay}
         playsInline
         preload="auto"
         crossOrigin="anonymous"

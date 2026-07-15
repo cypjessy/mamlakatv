@@ -15,6 +15,7 @@ import ToastBridge from "@/components/dashboard/ToastBridge";
 import EventCarousel from "@/components/dashboard/EventCarousel";
 import AlbumCarousel from "@/components/shared/AlbumCarousel";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
+import LiveTvEmbed from "@/components/shared/LiveTvEmbed";
 
 /* ==================================================================
    MOCK DATA
@@ -1373,29 +1374,7 @@ export default function AdminPage() {
         {/* CONTENT SCROLL */}
         <div className="content-scroll">
 
-          {/* ─── LIVE TV (Odysee Embed) — edge-to-edge ─── */}
-          <div className="live-tv-embed-section">
-            <div style={{ padding: '0 16px' }}>
-              <div className="live-tv-header">
-                <div className="live-tv-header-left">
-                  <i className="fas fa-tv"></i>
-                  <span>Live TV</span>
-                </div>
-                <button className="live-tv-manage-btn" onClick={() => router.push("/admin/tv")}>
-                  Manage <i className="fas fa-chevron-right"></i>
-                </button>
-              </div>
-            </div>
-            <div className="live-tv-embed-wrap">
-              <iframe
-                src="https://odysee.com/$/embed/@otvlive:a/gib254:2?autoplay=true"
-                className="live-tv-iframe"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                title="Live TV"
-              ></iframe>
-            </div>
-          </div>
+          <LiveTvEmbed navTo="/admin/tv" />
 
           {/* PREMIUM RADIO HERO CARD */}
           <section className="feed-section">
