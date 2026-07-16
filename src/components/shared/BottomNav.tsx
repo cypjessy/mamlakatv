@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface BottomNavProps {
   activeTab?: "home" | "tv" | "radio" | "meetings" | "gallery";
@@ -9,6 +12,20 @@ interface BottomNavProps {
 export default function BottomNav({ activeTab: propActiveTab }: BottomNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [liveTvActive, setLiveTvActive] = useState(false);
+
+  // Listen for live TV status
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "tv_live_status", "main"), (snap: any) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setLiveTvActive(d.isLive && !!d.liveVideoId);
+      } else {
+        setLiveTvActive(false);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Auto-detect active tab from pathname if not provided as prop
   const detectedTab = (() => {
@@ -43,8 +60,10 @@ export default function BottomNav({ activeTab: propActiveTab }: BottomNavProps) 
       <button
         className={`nav-item${activeTab === "tv" ? " active" : ""}`}
         onClick={() => navigate("/tv")}
+        style={{ position: "relative" }}
       >
         <i className="fas fa-tv"></i>
+        {liveTvActive && <span className="nav-live-dot"></span>}
         <span>TV</span>
       </button>
       <button

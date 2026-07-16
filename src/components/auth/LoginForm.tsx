@@ -62,7 +62,7 @@ export default function LoginForm() {
         return;
       }
 
-      await NativeBiometric.verifyIdentity({ reason: "Sign in to MOUNTAIN OF DELIVERANCE CHURCH", title: "Biometric Sign In" });
+      await NativeBiometric.verifyIdentity({ reason: "Sign in to MOD NAKURU", title: "Biometric Sign In" });
 
       setIsLoading(true);
       const result = await signInWithEmailAndPassword(auth, storedCreds.username, storedCreds.password);

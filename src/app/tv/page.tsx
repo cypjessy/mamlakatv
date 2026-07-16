@@ -2,16 +2,16 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import "plyr/dist/plyr.css";
+import { useTvPlayer } from "@/lib/tv/TvPlayerProvider";import { getVideos, getVideosPage, getVideosByIds, getVideo,
+  getChannel,
+  getUserTvState, updateUserTvProgress, saveUserTvState,
+  addToUserPlaylist, removeFromUserPlaylist,
+  updateTvHeartbeat,
+  saveUserNote, getUserNote, getAllUserNotes, deleteUserNote,
+} from "@/lib/youtube";
+import type { YouTubeVideo, YouTubeChannel, UserTvState, TvNote, LiveStatus } from "@/lib/youtube";
 import { auth, db } from "@/lib/firebase";
-import {
-  getTvBumperConfig,
-  getR2TvPlaylists, getR2Videos,
-  type R2Video, type R2TvPlaylist,
-} from "@/lib/r2Videos";
-import { useTvProgress } from "@/lib/useTvProgress";
-import VideoJsPlayer from "@/components/tv/VideoJsPlayer";
-import { saveUserNote, getUserNote, getAllUserNotes, deleteUserNote } from "@/lib/notes";
-import type { TvNote } from "@/lib/notes";
 import {
   getEnabledPaymentMethods, getMemberTransactions, submitTransaction,
   type PaymentMethod, type Transaction,
@@ -23,6 +23,22 @@ import {
 import ToastBridge from "@/components/dashboard/ToastBridge";
 import BottomNavBar from "@/components/shared/BottomNavBar";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
+
+/* ─── TV localStorage key helpers — read uid at call time for logout resilience ─── */
+function getTvSeekKey(): string {
+  if (typeof window === "undefined") return "tv_resume_seek";
+  const uid = auth.currentUser?.uid;
+  return uid ? `tv_resume_seek_${uid}` : "tv_resume_seek";
+}
+function getTvIndexKey(): string {
+  if (typeof window === "undefined") return "tv_resume_index";
+  const uid = auth.currentUser?.uid;
+  return uid ? `tv_resume_index_${uid}` : "tv_resume_index";
+}
+function getTvCachedSeek(): number {
+  if (typeof window === "undefined") return 0;
+  return Number(localStorage.getItem(getTvSeekKey())) || 0;
+}
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -65,141 +81,679 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 
 /* ─── Component ────────────────────────────────────────────── */
 
-// Module-level flag: persists across SPA page navigations (not across full page reloads).
-// The bumper only plays once per login session.
-let bumperPlayedThisSession = false;
-
 export default function TVPage() {
   const router = useRouter();
 
+  // ─── Video / channel state ───
+  const [videos, setVideos] = useState<YouTubeVideo[]>([]);  // User's playlist videos only
+  const [channel, setChannel] = useState<YouTubeChannel | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ─── R2 bumper + playlist state ───
-  const [bumperVideoUrl, setBumperVideoUrl] = useState<string | null>(null);
-  const [plVideos, setPlVideos] = useState<R2Video[]>([]);
-  const [plPlaylists, setPlPlaylists] = useState<R2TvPlaylist[]>([]);
+  // ─── Paginated "All Channel Videos" (loaded lazily when playlist tab opens) ───
+  const [allPaginatedVideos, setAllPaginatedVideos] = useState<YouTubeVideo[]>([]);
+  const [allVideosLastPos, setAllVideosLastPos] = useState<number | null>(null);
+  const [allVideosLoading, setAllVideosLoading] = useState(false);
+  const [allVideosHasMore, setAllVideosHasMore] = useState(true);
+  const allVideosLoadedRef = useRef(false);
 
-  // Shared TV progress hook — manages plCurrentIndex, seek refs, save/resume, bumper timer
-  const progress = useTvProgress(auth.currentUser?.uid);
-  const {
-    plCurrentIndex, setPlCurrentIndex,
-    currentSeekRef, savedSeekRef, savedPlIndexRef,
-    interruptVersion, setInterruptVersion,
-    isInitialBumperPlayed, setIsInitialBumperPlayed,
-    isBumperInterrupting, setIsBumperInterrupting,
-    startInterruptTimer, bumperInterruptTimerRef,
-    onTimeUpdate, loadedSavedState,
-  } = progress;
+  // ─── User TV state (per-member playlist + progress) ───
+  const [tvUserState, setTvUserState] = useState<UserTvState | null>(null);
+  const [startTvCountdown, setStartTvCountdown] = useState<number | null>(null);
+  const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
+  const lastTvSeekRef = useRef(0);
+  const lastTvIndexRef = useRef(0);
 
-  // ─── Current playing video (derived from R2 playlist) ───
-  const activePl = plPlaylists.length > 0 ? plPlaylists[0] : null;
-  const activeVideoId = activePl?.videoIds[plCurrentIndex];
-  const currentVideo = activeVideoId ? plVideos.find(v => v.id === activeVideoId) : undefined;
+  const cachedSeek = getTvCachedSeek();
+  // ─── Seek version — forces PlyrPlayer re-mount when Firestore loads a saved seek ───
+  const [seekVersion, setSeekVersion] = useState(0);
+
+  const tvPlayer = useTvPlayer();
+  const tvPlayerTargetRef = useCallback((el: HTMLDivElement | null) => {
+    tvPlayer.registerTarget(el);
+  }, [tvPlayer.registerTarget]);
+
+  // ─── Live stream mode (from global TvPlayerProvider, auto-detected) ───
+  const liveStatus = tvPlayer.liveStatus;
+
+  // ─── Current playing video (override with live stream when active) ───
+  const currentVideo = liveStatus?.isLive && liveStatus.liveVideoId
+    ? { id: liveStatus.liveVideoId, title: liveStatus.liveTitle || "Live Stream", description: "", thumbnail: "", channelTitle: "", channelId: "", publishedAt: "", duration: 0, position: 0, isFeatured: false, isHidden: false, syncedAt: null }
+    : tvUserState && tvUserState.playlist.length > 0
+      ? videos.find((v) => v.id === tvUserState.playlist[tvUserState.currentIndex])
+      : undefined;
+  const currentSeek = (() => {
+    // Prefer Firestore if it has a valid seek > 0.1 seconds
+    if (tvUserState && tvUserState.currentSeek > 0.1) return tvUserState.currentSeek;
+    // Otherwise use localStorage cache (freshly written by the other page)
+    return cachedSeek > 0.1 ? cachedSeek : undefined;
+  })();
 
   // ─── Tabs ───
   const [activeTab, setActiveTab] = useState<TabId>("notes");
 
-  // ─── Notes state ───
-  const notesLoadedRef = useRef(false);
-  const [noteContent, setNoteContent] = useState("");
-  const noteChangedRef = useRef(false);
-  const noteSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [noteSaving, setNoteSaving] = useState(false);
-  const [noteSavingExplicit, setNoteSavingExplicit] = useState(false);
-  const [noteLastSaved, setNoteLastSaved] = useState<Date | null>(null);
-  const [notesPreview, setNotesPreview] = useState(false);
-  const [notesSubTab, setNotesSubTab] = useState<"write" | "saved">("write");
-  const [allNotes, setAllNotes] = useState<TvNote[]>([]);
-  const [allNotesLoading, setAllNotesLoading] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<TvNote | null>(null);
-  const [notesSearch, setNotesSearch] = useState("");
-
   // ─── Chat state ───
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
-  const chatListRef = useRef<HTMLDivElement>(null!);
-  const chatEndRef = useRef<HTMLDivElement>(null!);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatListRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   // ─── Prayer state ───
   const [prayerName, setPrayerName] = useState("");
   const [prayerRequest, setPrayerRequest] = useState("");
-  const [prayerSending, setPrayerSending] = useState(false);
   const [prayers, setPrayers] = useState<PrayerEntry[]>([]);
+  const [prayerSending, setPrayerSending] = useState(false);
 
-  // ─── Giving state ───
-  const [giveLoading, setGiveLoading] = useState(true);
-  const [giveSelectedAmount, setGiveSelectedAmount] = useState<number | null>(null);
-  const [giveCustomAmount, setGiveCustomAmount] = useState("");
-  const [giveMethods, setGiveMethods] = useState<PaymentMethod[]>([]);
-  const [giveSelectedMethod, setGiveSelectedMethod] = useState<string | null>(null);
-  const [giveConfirmationCode, setGiveConfirmationCode] = useState("");
-  const [giveSubmitting, setGiveSubmitting] = useState(false);
-  const [giveTxns, setGiveTxns] = useState<Transaction[]>([]);
+  // ─── Notes state ───
+  const [noteContent, setNoteContent] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteLastSaved, setNoteLastSaved] = useState<Date | null>(null);
+  const notesLoadedRef = useRef(false);
+  const noteSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noteChangedRef = useRef(false);
 
-  // ─── Export notes ───
+  // ─── All notes library ───
+  const [allNotes, setAllNotes] = useState<TvNote[]>([]);
+  const [allNotesLoading, setAllNotesLoading] = useState(false);
+
+  // ─── Preview mode toggle ───
+  const [notesPreview, setNotesPreview] = useState(false);
+
+  // ─── Notes sub-tabs & reader ───
+  const [notesSubTab, setNotesSubTab] = useState<"write" | "saved">("write");
+  const [selectedNote, setSelectedNote] = useState<TvNote | null>(null);
+  const [noteSavingExplicit, setNoteSavingExplicit] = useState(false);
+  const [notesSearch, setNotesSearch] = useState("");
+
+  /* ─── Export all notes as a downloadable markdown file ─── */
   const handleExportNotes = useCallback(() => {
     if (allNotes.length === 0) return;
-    let md = "# My Sermon Notes\n\n";
-    for (const n of allNotes) {
-      md += `## ${n.videoTitle || "Untitled"}\n`;
-      if (n.updatedAt) md += `*Saved: ${new Date(n.updatedAt as any).toLocaleDateString()}*\n\n`;
-      md += `${n.content}\n\n---\n\n`;
+    const lines: string[] = [];
+    lines.push("# CRC Notes Export");
+    lines.push("");
+    lines.push(`Exported on: ${new Date().toLocaleDateString([], { year: "numeric", month: "long", day: "numeric" })}`);
+    lines.push(`Total notes: ${allNotes.length}`);
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+
+    const sorted = [...allNotes].sort((a, b) => (a.videoTitle || "").localeCompare(b.videoTitle || ""));
+
+    for (const note of sorted) {
+      lines.push(`## ${note.videoTitle || "Untitled Video"}`);
+      if (note.updatedAt) {
+        const d = new Date(note.updatedAt as any);
+        lines.push(`*Last edited: ${d.toLocaleDateString([], { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}*`);
+      }
+      lines.push("");
+      lines.push(note.content || "*(no content)*");
+      lines.push("");
+      lines.push("---");
+      lines.push("");
     }
-    const blob = new Blob([md], { type: "text/markdown" });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `sermon-notes-${new Date().toISOString().split("T")[0]}.md`;
+    a.download = `crc-notes-${new Date().toISOString().split("T")[0]}.md`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, [allNotes]);
 
-  // Fetch R2 bumper config, playlists & videos on mount (saved state loaded by useTvProgress)
+  // ─── Giving state ───
+  const [giveMethods, setGiveMethods] = useState<PaymentMethod[]>([]);
+  const [giveTxns, setGiveTxns] = useState<Transaction[]>([]);
+  const [giveLoading, setGiveLoading] = useState(true);
+  const [giveSubmitting, setGiveSubmitting] = useState(false);
+  const [giveSelectedMethod, setGiveSelectedMethod] = useState("");
+  const [giveCustomAmount, setGiveCustomAmount] = useState("");
+  const [giveSelectedAmount, setGiveSelectedAmount] = useState<number | null>(null);
+  const [giveConfirmationCode, setGiveConfirmationCode] = useState("");
+
+  // ─── User info ───
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user?.displayName) setUserName(user.displayName);
+    else if (user?.email) setUserName(user.email.split("@")[0]);
+    else setUserName("Guest");
+  }, []);
+
+  // Sync index ref when state changes + update localStorage
+  useEffect(() => {
+    if (tvUserState) {
+      lastTvIndexRef.current = tvUserState.currentIndex;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(getTvIndexKey(), String(tvUserState.currentIndex));
+      }
+    }
+  }, [tvUserState?.currentIndex]);
+
+  // Portal target registered via callback ref above — no useEffect needed.
+
+  // Call play() when current video changes or seekVersion increments
+  // (seekVersion changes when Firestore loads a saved position different from localStorage)
+  useEffect(() => {
+    if (currentVideo) {
+      // Prefer Firestore seek, fall back to localStorage
+      const seek = (tvUserState && tvUserState.currentSeek > 0.1)
+        ? tvUserState.currentSeek
+        : cachedSeek > 0.1 ? cachedSeek : undefined;
+      tvPlayer.play(currentVideo.id, seek);
+    }
+  }, [currentVideo?.id, tvPlayer, seekVersion]);
+
+  // ─── Initial load: fetch channel + user's TV state + only playlist videos ───
   useEffect(() => {
     let mounted = true;
-    const fetchTv = async () => {
+    const load = async () => {
       const uid = auth.currentUser?.uid;
       if (!uid) { if (mounted) setLoading(false); return; }
       try {
-        const [bumper, r2Pls, r2Vids] = await Promise.all([
-          getTvBumperConfig().catch(() => null),
-          getR2TvPlaylists().catch<R2TvPlaylist[]>(() => []),
-          getR2Videos({ includeHidden: true }).catch<R2Video[]>(() => []),
+        const [c, state] = await Promise.all([
+          getChannel(),
+          getUserTvState(uid),
         ]);
         if (!mounted) return;
-        // Wait for useTvProgress hook to finish loading saved state before restoring
-        if (!loadedSavedState) return;
-        if (bumper?.r2VideoUrl) {
-          setBumperVideoUrl(bumper.r2VideoUrl);
-          if (bumperPlayedThisSession) {
-            setIsInitialBumperPlayed(true);
-            const restoreIndex = savedPlIndexRef.current;
-            setPlCurrentIndex(restoreIndex);
-            if (savedSeekRef.current > 0) {
-              setInterruptVersion(v => v + 1);
-            }
-            startInterruptTimer();
+
+        let finalState = state;
+        let userVideos: YouTubeVideo[] = [];
+
+        if (state.playlist.length === 0) {
+          // First visit — auto-populate playlist with recent videos (more can be added from the Playlist tab)
+          const all = await getVideos({ max: 15 });
+          const valid = all.filter((v) => v.title && v.id);
+          if (valid.length > 0) {
+            const ids = valid.map((v) => v.id);
+            await saveUserTvState(uid, {
+              playlist: ids,
+              currentIndex: 0,
+              currentSeek: 0,
+            });
+            finalState = { playlist: ids, currentIndex: 0, currentSeek: 0, updatedAt: null };
+            userVideos = valid;
           }
         } else {
-          setIsInitialBumperPlayed(true);
-          bumperPlayedThisSession = true;
-          startInterruptTimer();
+          // Restore index from localStorage as fallback if Firestore was reset
+          const cachedIndex = typeof window !== "undefined"
+            ? Number(localStorage.getItem(getTvIndexKey())) || 0
+            : 0;
+          if (cachedIndex > 0 && cachedIndex < state.playlist.length && state.currentIndex === 0) {
+            state.currentIndex = cachedIndex;
+          }
+          // Only load the current video for playback; rest load lazily when Playlist tab opens
+          const currentId = state.playlist[state.currentIndex];
+          if (currentId) {
+            const current = await getVideo(currentId);
+            if (current) userVideos = [current];
+          }
         }
-        if (r2Pls.length > 0) setPlPlaylists(r2Pls);
-        if (r2Vids.length > 0) setPlVideos(r2Vids);
+
+        if (!mounted) return;
+        setVideos(userVideos);
+        setChannel(c);
+        setTvUserState(finalState);
+        // If Firestore has a valid seek, increment seekVersion so PlyrPlayer re-mounts with it
+        if (finalState.currentSeek > 0.1 && Math.abs(finalState.currentSeek - cachedSeek) > 1) {
+          setSeekVersion(v => v + 1);
+        }
+        // Give user time to resume — 5s countdown before Start TV button becomes active
+        if (finalState.currentSeek > 0.1) {
+          setResumeCountdown(5);
+        }
       } catch {} finally {
         if (mounted) setLoading(false);
       }
     };
-    fetchTv();
+    load();
     return () => { mounted = false; };
-  }, [loadedSavedState]);
-
-  // ─── Advance to next video in user's playlist ───
-  const advanceToNext = useCallback(() => {
-    // Video advancement handled by VideoJsPlayer onEnded
   }, []);
+
+  // ─── Load giving data (only when give tab is open) ───
+  useEffect(() => {
+    if (activeTab !== "give") return;
+    let mounted = true;
+    const load = async () => {
+      const uid = auth.currentUser?.uid;
+      try {
+        const [m, t] = await Promise.all([
+          getEnabledPaymentMethods(),
+          uid ? getMemberTransactions(uid) : Promise.resolve([]),
+        ]);
+        if (!mounted) return;
+        setGiveMethods(m);
+        setGiveTxns(t);
+        if (m.length > 0) setGiveSelectedMethod(m[0].id!);
+      } catch {} finally { if (mounted) setGiveLoading(false); }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [activeTab]);
+
+  // ─── Lazy-load all user's playlist videos + first page of "All Channel Videos" when playlist tab opens ───
+  useEffect(() => {
+    if (activeTab !== "playlist" || allVideosLoadedRef.current) return;
+    allVideosLoadedRef.current = true;
+    (async () => {
+      setAllVideosLoading(true);
+      try {
+        // Load full playlist video data (not just current video)
+        if (tvUserState && tvUserState.playlist.length > 0) {
+          const allPlaylistVids = await getVideosByIds(tvUserState.playlist);
+          setVideos(allPlaylistVids);
+        }
+        // Load paginated channel videos
+        const { videos: page, lastPosition } = await getVideosPage(20);
+        setAllPaginatedVideos(page);
+        setAllVideosLastPos(lastPosition);
+        setAllVideosHasMore(page.length === 20);
+      } catch {}
+      setAllVideosLoading(false);
+    })();
+  }, [activeTab]);
+
+  const loadMoreVideos = useCallback(async () => {
+    if (allVideosLoading || !allVideosHasMore) return;
+    setAllVideosLoading(true);
+    try {
+      const { videos: page, lastPosition } = await getVideosPage(20, allVideosLastPos ?? undefined);
+      setAllPaginatedVideos((prev) => [...prev, ...page]);
+      setAllVideosLastPos(lastPosition);
+      setAllVideosHasMore(page.length === 20);
+    } catch {}
+    setAllVideosLoading(false);
+  }, [allVideosLastPos, allVideosLoading, allVideosHasMore]);
+
+  // ─── Load video data when advancing to a video not yet in local state ───
+  useEffect(() => {
+    if (!tvUserState || tvUserState.playlist.length === 0) return;
+    const currentId = tvUserState.playlist[tvUserState.currentIndex];
+    if (!currentId) return;
+    if (!videos.some((v) => v.id === currentId)) {
+      getVideo(currentId).then((v) => {
+        if (v) setVideos((prev) => [...prev, v]);
+      });
+    }
+  }, [tvUserState?.currentIndex]);
+
+  // ─── Advance to next video in user's playlist (wraps around like dashboard) ───
+  const advanceToNext = useCallback(() => {
+    setStartTvCountdown(null);
+    if (!tvUserState || tvUserState.playlist.length === 0) return;
+    const nextIndex = (tvUserState.currentIndex + 1) % tvUserState.playlist.length;
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      updateUserTvProgress(uid, nextIndex, 0);
+    }
+    // Reset localStorage cache for new video
+    if (typeof window !== "undefined") {
+      localStorage.setItem(getTvSeekKey(), "0");
+      localStorage.setItem(getTvIndexKey(), String(nextIndex));
+    }
+    setTvUserState((prev) => prev ? { ...prev, currentIndex: nextIndex, currentSeek: 0 } : prev);
+  }, [tvUserState]);
+
+  // ─── Track current seek for periodic Firestore + localStorage saves ───
+  const handleTvTimeUpdate = useCallback((time: number) => {
+    lastTvSeekRef.current = time;
+    // Write to localStorage instantly for cross-page resume
+    if (typeof window !== "undefined") {
+      localStorage.setItem(getTvSeekKey(), String(time));
+    }
+  }, []);
+
+  // Keep callbacks in sync with latest versions (after advanceToNext/handleTvTimeUpdate)
+  useEffect(() => {
+    // Don't advance when in live mode — Firestore listener handles end
+    if (liveStatus?.isLive) {
+      tvPlayer.setCallbacks({
+        onEnded: () => {},
+        onTimeUpdate: () => {},
+      });
+    } else {
+      tvPlayer.setCallbacks({
+        onEnded: () => {
+          if (tvUserState && tvUserState.currentIndex >= tvUserState.playlist.length - 1) {
+            // Last video finished — playlist complete, don't advance
+            return;
+          }
+          if (tvUserState && tvUserState.playlist.length > 1) {
+            setStartTvCountdown(20);
+          } else {
+            advanceToNext();
+          }
+        },
+        onTimeUpdate: handleTvTimeUpdate,
+      });
+    }
+  }, [advanceToNext, handleTvTimeUpdate, tvPlayer, liveStatus?.isLive]);
+
+  /* Save current progress to Firestore + localStorage (used by interval + cleanup) */
+  const saveTvProgress = useCallback(() => {
+    const uid = auth.currentUser?.uid;
+    if (uid && lastTvSeekRef.current > 0) {
+      updateUserTvProgress(uid, lastTvIndexRef.current, lastTvSeekRef.current);
+    }
+    // Also persist to localStorage as fresh backup
+    if (typeof window !== "undefined") {
+      localStorage.setItem(getTvSeekKey(), String(lastTvSeekRef.current));
+      localStorage.setItem(getTvIndexKey(), String(lastTvIndexRef.current));
+    }
+  }, []);
+
+  /* Periodically save seek position (every 5s) */
+  useEffect(() => {
+    if (!tvUserState || !auth.currentUser?.uid) return;
+    const interval = setInterval(saveTvProgress, 5000);
+    return () => {
+      clearInterval(interval);
+      // Save on unmount/cleanup as well
+      saveTvProgress();
+    };
+  }, [tvUserState?.currentIndex, saveTvProgress]);
+
+  // ─── Start TV countdown timer (after video ends — auto-advances) ───
+  useEffect(() => {
+    if (startTvCountdown === null || startTvCountdown <= 0) return;
+    const timer = setTimeout(() => {
+      if (startTvCountdown <= 1) {
+        setStartTvCountdown(null);
+        advanceToNext();
+      } else {
+        setStartTvCountdown(startTvCountdown - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [startTvCountdown, advanceToNext]);
+
+  // ─── Resume countdown timer (on page load with saved seek — just releases button) ───
+  useEffect(() => {
+    if (resumeCountdown === null || resumeCountdown <= 0) return;
+    const timer = setTimeout(() => {
+      if (resumeCountdown <= 1) {
+        setResumeCountdown(null); // button becomes active
+      } else {
+        setResumeCountdown(resumeCountdown - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resumeCountdown]);
+
+  /* Save on page unload / tab hide */
+  useEffect(() => {
+    const handleUnload = () => saveTvProgress();
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") saveTvProgress();
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [saveTvProgress]);
+
+  // ─── App resume — save on background, re-fetch on foreground (Android) ───
+  useEffect(() => {
+    let canceled = false;
+    import("@capacitor/core")
+      .then(({ Capacitor }) => {
+        if (canceled || !Capacitor.isNativePlatform()) return;
+        return import("@capacitor/app");
+      })
+      .then((AppModule) => {
+        if (canceled || !AppModule) return;
+        const { App } = AppModule;
+        App.addListener("appStateChange", (state) => {
+          if (!state.isActive) {
+            saveTvProgress();
+          } else {
+            const uid = auth.currentUser?.uid;
+            if (uid) getUserTvState(uid).then((s) => setTvUserState(s));
+          }
+        }).then((handler) => {
+          if (canceled) handler.remove();
+        });
+      });
+    return () => { canceled = true; };
+  }, [saveTvProgress]);
+
+  // ─── Tab visibility — re-fetch TV state when tab comes back into focus (web) ───
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          // Re-fetch TV state from Firestore when tab becomes visible
+          getUserTvState(uid).then((s) => setTvUserState(s));
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // ─── TV Heartbeat — marks this user as actively watching (for admin viewer count) ───
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    // Immediate heartbeat on mount
+    updateTvHeartbeat(uid);
+    // Then every 30 seconds
+    const interval = setInterval(() => updateTvHeartbeat(uid), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ─── Orientation toggle ───
+  const [isLandscape, setIsLandscape] = useState(false);
+  useEffect(() => {
+    const check = () => setIsLandscape(window.innerWidth > window.innerHeight);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const toggleOrientation = useCallback(async () => {
+    try {
+      const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+      if (isLandscape) {
+        await ScreenOrientation.lock({ orientation: "portrait" } as any);
+      } else {
+        await ScreenOrientation.lock({ orientation: "landscape" } as any);
+      }
+    } catch {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch {}
+    }
+  }, [isLandscape]);
+
+  // ─── Chat real-time listener (only when chat tab is open) ───
+  const chatBufferRef = useRef<ChatMessage[]>([]);
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+    const q = query(
+      collection(db, "tv_chat"),
+      orderBy("timestamp", "desc"),
+      limit(100),
+    );
+    chatBufferRef.current = [];
+    const unsub = onSnapshot(q, (snap) => {
+      snap.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          chatBufferRef.current = chatBufferRef.current.filter((m) => m.id !== change.doc.id);
+          return;
+        }
+        const data = change.doc.data();
+        const msg: ChatMessage = {
+          id: change.doc.id,
+          userId: data.userId || "",
+          userName: data.userName || "Anonymous",
+          message: data.message || "",
+          timestamp: (data.timestamp as Timestamp)?.toDate() || new Date(),
+        };
+        if (change.type === "added") {
+          // Prepend since query orders by timestamp desc (newest first)
+          chatBufferRef.current = [msg, ...chatBufferRef.current];
+        } else if (change.type === "modified") {
+          chatBufferRef.current = chatBufferRef.current.map((m) =>
+            m.id === change.doc.id ? msg : m
+          );
+        }
+      });
+      setMessages(chatBufferRef.current);
+    });
+    return () => {
+      unsub();
+      chatBufferRef.current = [];
+    };
+  }, [activeTab]);
+
+  // ─── Auto-scroll chat ───
+  useEffect(() => {
+    if (autoScroll && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, autoScroll]);
+
+  // Handle chat scroll to detect manual scroll-up
+  const handleChatScroll = useCallback(() => {
+    if (!chatListRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatListRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
+    setAutoScroll(isAtBottom);
+  }, []);
+
+  // ─── Send chat message ───
+  const handleSendChat = useCallback(async () => {
+    const msg = chatInput.trim();
+    if (!msg) return;
+    setChatSending(true);
+    try {
+      await addDoc(collection(db, "tv_chat"), {
+        userId: auth.currentUser?.uid || "anonymous",
+        userName: userName,
+        message: msg,
+        timestamp: serverTimestamp(),
+      });
+      setChatInput("");
+      setAutoScroll(true);
+    } catch {}
+    setChatSending(false);
+  }, [chatInput, userName]);
+
+  const handleChatKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSendChat();
+      }
+    },
+    [handleSendChat],
+  );
+
+  // ─── Prayer requests listener (per-user, only when prayer tab is open) ───
+  const prayerBufferRef = useRef<PrayerEntry[]>([]);
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid || activeTab !== "prayer") return;
+    const q = query(
+      collection(db, "users", uid, "tv_prayers"),
+      orderBy("createdAt", "desc"),
+      limit(50),
+    );
+    prayerBufferRef.current = [];
+    const unsub = onSnapshot(q, (snap) => {
+      snap.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          prayerBufferRef.current = prayerBufferRef.current.filter((p) => p.id !== change.doc.id);
+          return;
+        }
+        const data = change.doc.data();
+        const entry: PrayerEntry = {
+          id: change.doc.id,
+          name: data.name || "Anonymous",
+          request: data.request || "",
+          createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
+          replyText: data.replyText || undefined,
+          repliedBy: data.repliedBy || undefined,
+          repliedAt: data.repliedAt ? (data.repliedAt as Timestamp)?.toDate() : undefined,
+        };
+        if (change.type === "added") {
+          prayerBufferRef.current = [entry, ...prayerBufferRef.current];
+        } else if (change.type === "modified") {
+          prayerBufferRef.current = prayerBufferRef.current.map((p) =>
+            p.id === change.doc.id ? entry : p
+          );
+        }
+      });
+      setPrayers(prayerBufferRef.current);
+    });
+    return () => {
+      unsub();
+      prayerBufferRef.current = [];
+    };
+  }, [activeTab]);
+
+  // ─── Send prayer request (writes to per-user subcollection) ───
+  const handleSendPrayer = useCallback(async () => {
+    const req = prayerRequest.trim();
+    if (!req) return;
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    setPrayerSending(true);
+    try {
+      await addDoc(collection(db, "users", uid, "tv_prayers"), {
+        userId: uid,
+        name: prayerName.trim() || userName,
+        request: req,
+        createdAt: serverTimestamp(),
+      });
+      setPrayerRequest("");
+    } catch {}
+    setPrayerSending(false);
+  }, [prayerRequest, prayerName, userName]);
+
+  // ─── Give submit handler ───
+  const handleGiveSubmit = useCallback(async () => {
+    const amount = giveSelectedAmount || (giveCustomAmount ? parseInt(giveCustomAmount) : 0);
+    if (amount < 1) { (window as any).dispatchEvent(new CustomEvent("show-toast", { detail: { title: "Amount", message: "Please enter a valid amount", type: "error", duration: 3000 } })); return; }
+    if (!giveSelectedMethod) { (window as any).dispatchEvent(new CustomEvent("show-toast", { detail: { title: "Method", message: "Please select a payment method", type: "error", duration: 3000 } })); return; }
+    if (!giveConfirmationCode.trim()) { (window as any).dispatchEvent(new CustomEvent("show-toast", { detail: { title: "Code", message: "Please enter your payment confirmation code", type: "error", duration: 3000 } })); return; }
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const method = giveMethods.find((m) => m.id === giveSelectedMethod);
+    setGiveSubmitting(true);
+    try {
+      await submitTransaction({
+        memberId: uid,
+        memberName: userName,
+        amount,
+        paymentMethodId: giveSelectedMethod,
+        paymentMethodLabel: method?.name || "Unknown",
+        confirmationCode: giveConfirmationCode.trim(),
+        date: new Date().toISOString(),
+      });
+      const t = await getMemberTransactions(uid);
+      setGiveTxns(t);
+      setGiveCustomAmount("");
+      setGiveSelectedAmount(null);
+      setGiveConfirmationCode("");
+      (window as any).dispatchEvent(new CustomEvent("show-toast", { detail: { title: "Thank You!", message: "Your giving has been submitted for confirmation.", type: "success", duration: 3000 } }));
+    } catch { (window as any).dispatchEvent(new CustomEvent("show-toast", { detail: { title: "Error", message: "Failed to submit. Please try again.", type: "error", duration: 3000 } })); }
+    setGiveSubmitting(false);
+  }, [giveSelectedAmount, giveCustomAmount, giveSelectedMethod, giveConfirmationCode, giveMethods, userName]);
 
   // ─── Load saved notes from Firestore + localStorage draft (only when Notes tab is active) ───
   useEffect(() => {
@@ -407,69 +961,45 @@ export default function TVPage() {
     return result;
   }, []);
 
-  // ─── Playlist helpers (stubs - R2 playlist managed by admin) ───
+  // ─── Playlist helpers ───
   
-  const handleAddToPlaylist = useCallback(async (_videoId: string) => {
-    alert("Playlist is managed by church admin.");
-  }, []);
+  const [addingToPlaylist, setAddingToPlaylist] = useState<string | null>(null);
+  const [removingFromPlaylist, setRemovingFromPlaylist] = useState<string | null>(null);
 
-  const handleRemoveFromPlaylist = useCallback(async (_videoId: string) => {
-    alert("Playlist is managed by church admin.");
-  }, []);
-
-  const playlistVideoIds = new Set<string>();
-  const playlistVideos: R2Video[] = [];
-
-  // ─── Render tab content ───
-  const handleChatScroll = useCallback(() => {
-    // Auto-scroll logic handled by chat list ref
-  }, []);
-
-  const handleChatKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendChat();
-    }
-  }, []);
-
-  const handleSendChat = useCallback(async () => {
-    const uid = auth.currentUser?.uid;
-    if (!uid || !chatInput.trim()) return;
-    setChatSending(true);
-    try {
-      await addDoc(collection(db, "tv_chat"), {
-        userId: uid,
-        userName: auth.currentUser?.displayName || "Anonymous",
-        message: chatInput.trim(),
-        timestamp: serverTimestamp(),
-      });
-      setChatInput("");
-    } catch {}
-    setChatSending(false);
-  }, [chatInput]);
-
-  const handleSendPrayer = useCallback(async () => {
-    if (!prayerRequest.trim()) return;
+  const handleAddToPlaylist = useCallback(async (videoId: string) => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-    setPrayerSending(true);
+    setAddingToPlaylist(videoId);
     try {
-      await addDoc(collection(db, "users", uid, "tv_prayers"), {
-        name: prayerName.trim() || "Anonymous",
-        request: prayerRequest.trim(),
-        createdAt: serverTimestamp(),
-      });
-      setPrayerRequest("");
+      await addToUserPlaylist(uid, videoId);
+      const fresh = await getUserTvState(uid);
+      setTvUserState(fresh);
+      // Also add the video data to local state
+      if (!videos.some((v) => v.id === videoId)) {
+        const vid = await getVideo(videoId);
+        if (vid) setVideos((prev) => [...prev, vid]);
+      }
     } catch {}
-    setPrayerSending(false);
-  }, [prayerName, prayerRequest]);
+    setAddingToPlaylist(null);
+  }, [videos]);
 
-  const handleGiveSubmit = useCallback(async () => {
-    // Giving handled directly in the give tab button
+  const handleRemoveFromPlaylist = useCallback(async (videoId: string) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    setRemovingFromPlaylist(videoId);
+    try {
+      await removeFromUserPlaylist(uid, videoId);
+      const fresh = await getUserTvState(uid);
+      setTvUserState(fresh);
+      setVideos((prev) => prev.filter((v) => v.id !== videoId));
+    } catch {}
+    setRemovingFromPlaylist(null);
   }, []);
-  const handleGiveSubmitRef = useRef(handleGiveSubmit);
-  handleGiveSubmitRef.current = handleGiveSubmit;
 
+  const playlistVideoIds = new Set(tvUserState?.playlist || []);
+  const playlistVideos = videos.filter((v) => playlistVideoIds.has(v.id));
+
+  // ─── Render tab content ───
   const renderTabContent = () => {
     switch (activeTab) {
       case "chat":
@@ -630,9 +1160,9 @@ export default function TVPage() {
                       {currentVideo.description && (
                         <div className="tv-notes-current-desc">{currentVideo.description}</div>
                       )}
-                      {activePl && (
+                      {tvUserState && (
                         <div className="tv-notes-current-playlist">
-                          <i className="fas fa-list"></i> Video {plCurrentIndex + 1} of {activePl.videoIds.length}
+                          <i className="fas fa-list"></i> Video {tvUserState.currentIndex + 1} of {tvUserState.playlist.length}
                         </div>
                       )}
                     </div>
@@ -943,7 +1473,7 @@ export default function TVPage() {
                       <div className="giving-code-hint">Enter the confirmation code you received after making payment</div>
                     </div>
 
-                    <button className="giving-submit-btn" disabled={giveSubmitting} onClick={handleGiveSubmitRef.current}>
+                    <button className="giving-submit-btn" disabled={giveSubmitting} onClick={handleGiveSubmit}>
                       {giveSubmitting ? (
                         <><i className="fas fa-spinner fa-spin"></i> Submitting...</>
                       ) : (
@@ -995,80 +1525,140 @@ export default function TVPage() {
                   <i className="fas fa-play"></i> Now Playing
                 </div>
                 <div className="tv-schedule-now-title">{currentVideo.title}</div>
-                {plPlaylists.length > 0 && (
+                {tvUserState && (
                   <div className="tv-schedule-now-playlist">
-                    <i className="fas fa-list"></i> Video {plCurrentIndex + 1} of {plPlaylists[0].videoIds.length}
+                    <i className="fas fa-list"></i> Video {tvUserState.currentIndex + 1} of {tvUserState.playlist.length}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Current Playlist */}
+            {/* My Playlist */}
             <div className="tv-schedule-section-title">
-              <i className="fas fa-list"></i> Current Playlist ({plVideos.length} videos)
+              <i className="fas fa-list"></i> My Playlist ({playlistVideos.length} videos)
             </div>
 
-            {plVideos.length === 0 ? (
+            {playlistVideos.length === 0 ? (
               <div className="tv-tab-empty">
                 <i className="fas fa-list"></i>
-                <span>No videos in the current playlist. Admin sets up the playlist in TV settings.</span>
+                <span>Your playlist is empty. Browse the channel videos below and tap + to add them.</span>
               </div>
             ) : (
               <div className="tv-playlist-videos">
-                {plVideos.map((vid, idx) => {
-                  const isActive = idx === plCurrentIndex;
+                {tvUserState?.playlist.map((videoId, idx) => {
+                  const vid = videos.find((v) => v.id === videoId);
+                  if (!vid) return null;
+                  const isActive = idx === tvUserState.currentIndex;
                   return (
-                    <div key={vid.id} className={`tv-pl-video ${isActive ? "active" : ""}`}>
+                    <div key={videoId} className={`tv-pl-video ${isActive ? "active" : ""}`}>
                       <div className="tv-pl-video-num">{idx + 1}</div>
                       <div className="tv-pl-video-thumb">
-                        {vid.thumbnail ? (
-                          <img src={vid.thumbnail} alt={vid.title} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-elevated)', color: 'var(--text-tertiary)', fontSize: 16 }}>
-                            <i className="fas fa-video"></i>
-                          </div>
-                        )}
+                        <img src={vid.thumbnail || `https://i.ytimg.com/vi/${vid.id}/default.jpg`} alt="" />
                       </div>
                       <div className="tv-pl-video-info">
                         <div className="tv-pl-video-title">{vid.title}</div>
                         <div className="tv-pl-video-meta">{formatTime(vid.duration)}</div>
                       </div>
+                      <button
+                        className="tv-pl-remove-btn"
+                        onClick={() => handleRemoveFromPlaylist(videoId)}
+                        disabled={removingFromPlaylist === videoId}
+                      >
+                        {removingFromPlaylist === videoId ? (
+                          <i className="fas fa-spinner fa-spin"></i>
+                        ) : (
+                          <i className="fas fa-trash"></i>
+                        )}
+                      </button>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {/* All Available Videos */}
+            {/* All available channel videos (paginated) */}
             <div className="tv-schedule-section-title" style={{ marginTop: 16 }}>
-              <i className="fas fa-video"></i> Available Videos ({plVideos.length})
+              <i className="fas fa-video"></i> All Channel Videos {allPaginatedVideos.length > 0 ? `(${allPaginatedVideos.length} loaded)` : ""}
             </div>
-            <div className="tv-pl-all-videos">
-              {plVideos.length === 0 ? (
+            {allPaginatedVideos.length === 0 ? (
+              allVideosLoading ? (
+                <>
+                  <div className="tv-skeleton-title"></div>
+                  <div className="tv-skeleton-list">
+                    {[1,2,3,4,5].map((i) => (
+                      <div key={i} className="tv-skeleton-card">
+                        <div className="tv-skeleton-thumb"></div>
+                        <div className="tv-skeleton-line"></div>
+                        <div className="tv-skeleton-line short"></div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
                 <div className="tv-tab-empty" style={{ padding: "20px 16px" }}>
                   <i className="fas fa-search"></i>
-                  <span>No videos available yet. Admin will upload videos to the library.</span>
+                  <span>No videos available. Videos are synced from your YouTube channel.</span>
                 </div>
-              ) : (
-                plVideos.map((vid) => (
-                  <div key={vid.id} className="tv-pl-all-item">
-                    <div className="tv-pl-all-thumb">
-                      {vid.thumbnail ? (
-                        <img src={vid.thumbnail} alt={vid.title} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-elevated)', color: 'var(--text-tertiary)', fontSize: 16 }}>
-                          <i className="fas fa-video"></i>
+              )
+            ) : (
+              <>
+                <div className="tv-pl-all-videos">
+                  {allPaginatedVideos.map((vid) => {
+                    const inPlaylist = playlistVideoIds.has(vid.id);
+                    return (
+                      <div key={vid.id} className={`tv-pl-all-item ${inPlaylist ? "added" : ""}`}>
+                        <div className="tv-pl-all-thumb">
+                          <img src={vid.thumbnail || `https://i.ytimg.com/vi/${vid.id}/default.jpg`} alt="" />
                         </div>
-                      )}
-                    </div>
-                    <div className="tv-pl-all-info">
-                      <div className="tv-pl-all-title">{vid.title}</div>
-                      <div className="tv-pl-all-meta">{formatTime(vid.duration)}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                        <div className="tv-pl-all-info">
+                          <div className="tv-pl-all-title">{vid.title}</div>
+                          <div className="tv-pl-all-meta">{formatTime(vid.duration)}</div>
+                        </div>
+                        {inPlaylist ? (
+                          <button
+                            className="tv-pl-remove-btn"
+                            onClick={() => handleRemoveFromPlaylist(vid.id)}
+                            disabled={removingFromPlaylist === vid.id}
+                          >
+                            {removingFromPlaylist === vid.id ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                              <i className="fas fa-minus-circle"></i>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            className="tv-pl-add-btn"
+                            onClick={() => handleAddToPlaylist(vid.id)}
+                            disabled={addingToPlaylist === vid.id}
+                          >
+                            {addingToPlaylist === vid.id ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                              <i className="fas fa-plus-circle"></i>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Load More button */}
+                {allVideosHasMore && (
+                  <button
+                    className="tv-pl-load-more"
+                    onClick={loadMoreVideos}
+                    disabled={allVideosLoading}
+                  >
+                    {allVideosLoading ? (
+                      <><i className="fas fa-spinner fa-spin"></i> Loading...</>
+                    ) : (
+                      <><i className="fas fa-chevron-down"></i> Load More</>
+                    )}
+                  </button>
+                )}
+              </>
+            )}
           </div>
         );
 
@@ -1133,9 +1723,18 @@ export default function TVPage() {
         @media (max-width: 480px) {
           .tv-player-outer { max-height: 60vh; min-height: 240px; }
         }
-        .tv-player-embed {
-          position: absolute; inset: 0;
-          width: 100%; height: 100%;
+        .tv-player-outer .plyr { width: 100%; height: 100%; }
+        .tv-player-outer .plyr__video-wrapper { height: 100%; }
+        .tv-player-outer .plyr__video-embed { aspect-ratio: auto !important; }
+        .tv-player-outer .plyr__video-embed,
+        .tv-player-outer iframe { width: 100% !important; height: 100% !important; }
+        .tv-player-outer .plyr__video-embed iframe { object-fit: cover; }
+        @media (max-width: 480px) {
+          .tv-player-outer .plyr__controls { padding: 8px 4px !important; }
+          .tv-player-outer .plyr__control { padding: 10px 8px !important; min-width: 40px; min-height: 40px; }
+          .tv-player-outer .plyr__control svg { width: 20px; height: 20px; }
+          .tv-player-outer .plyr__progress__container { flex: 1; }
+          .tv-player-outer .plyr__time { font-size: 12px; }
         }
 
         /* ─── PLACEHOLDER / LOADING ─── */
@@ -2167,13 +2766,13 @@ export default function TVPage() {
         ) : (
           <>
             <PremiumTopBar
-              title="Church TV"
+              title={channel?.title ? `${channel.title} TV` : "Church TV"}
               showBack
               rightContent={
                 <>
                   <button
-                    onClick={() => {}}
-                    title={false ? "Portrait" : "Landscape"}
+                    onClick={toggleOrientation}
+                    title={isLandscape ? "Portrait" : "Landscape"}
                     style={{
                       width: 36, height: 36, borderRadius: "50%",
                       background: "var(--surface, #1A1A1A)",
@@ -2183,7 +2782,7 @@ export default function TVPage() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                   >
-                    <i className={`fas fa-${false ? "compress" : "expand"}`}></i>
+                    <i className={`fas fa-${isLandscape ? "compress" : "expand"}`}></i>
                   </button>
                   <button
                     onClick={() => router.push("/dashboard")}
@@ -2205,63 +2804,56 @@ export default function TVPage() {
 
             <div className="tv-player-section">
               <div className="tv-player-outer">
-                {/* R2 Bumper/Playlist Player (video.js) */}
-                {(() => {
-                  const showBumper = (bumperVideoUrl !== null && !isInitialBumperPlayed) || isBumperInterrupting;
-                  const activePl = plPlaylists.find(p => p.videoIds.length > 0);
-                  const activeVideoId = activePl?.videoIds[plCurrentIndex];
-                  const activeVideo = activeVideoId ? plVideos.find(v => v.id === activeVideoId) : null;
-                  const currentSource = showBumper ? bumperVideoUrl : activeVideo?.url;
+                {/* Player — rendered by global TvPlayerProvider */}
+                {/* Live badge overlay */}
+                {liveStatus?.isLive && (
+                  <div className="tv-live-badge-overlay">
+                    <span className="tv-live-badge-dot"></span>
+                    <span className="tv-live-badge-text">LIVE</span>
+                    {liveStatus.liveTitle && (
+                      <span className="tv-live-badge-title">{liveStatus.liveTitle}</span>
+                    )}
+                  </div>
+                )}
+                <div ref={tvPlayerTargetRef} className="tv-player-outer" style={{ aspectRatio: "16/9" }}>
+                  {currentVideo ? (
+                    <div className="tv-schedule-now" style={{ display: "none" }}></div>
+                  ) : (
+                    <div className="tv-player-placeholder">
+                      <i className="fas fa-tv"></i>
+                      <p>No videos available</p>
+                    </div>
+                  )}
+                </div>
 
-                  if (!currentSource) {
-                    return (
-                      <div className="tv-player-placeholder">
-                        <i className="fas fa-tv"></i>
-                        <p>TV is off air</p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <VideoJsPlayer
-                      sourceUrl={currentSource}
-                      className="tv-player-embed"
-                      autoplay={true}
-                      onTimeUpdate={onTimeUpdate}
-                      seekTo={isBumperInterrupting ? 0 : savedSeekRef.current}
-                      seekVersion={isBumperInterrupting ? 0 : interruptVersion}
-                      onEnded={() => {
-                        if (!isInitialBumperPlayed) {
-                          bumperPlayedThisSession = true;
-                          setIsInitialBumperPlayed(true);
-                          const restoreIndex = savedPlIndexRef.current;
-                          setPlCurrentIndex(restoreIndex);
-                          if (savedSeekRef.current > 0) {
-                            setInterruptVersion(v => v + 1);
-                          }
-                          if (savedPlIndexRef.current > 0 || savedSeekRef.current > 0) {
-                            window.dispatchEvent(new CustomEvent("show-toast", {
-                              detail: { title: "Resuming Saved Progress", message: `Picking up from video ${(savedPlIndexRef.current || 0) + 1} in your playlist`, type: "info", duration: 3000 }
-                            }));
-                          }
-                          startInterruptTimer();
-                        } else if (isBumperInterrupting) {
-                          setIsBumperInterrupting(false);
-                          setInterruptVersion(v => v + 1);
-                          startInterruptTimer();
-                        } else if (activePl && activeVideoId) {
-                          const nextIdx = plCurrentIndex + 1;
-                          if (nextIdx < activePl.videoIds.length) {
-                            setPlCurrentIndex(nextIdx);
-                          } else {
-                            setPlCurrentIndex(0);
-                          }
-                          startInterruptTimer();
+                {/* Start TV button (always visible as Next button) */}
+                {currentVideo && (
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", padding: "10px", zIndex: 15, pointerEvents: "none" }}>
+                    <button
+                      style={{ pointerEvents: "auto", opacity: startTvCountdown !== null || resumeCountdown !== null ? 0.6 : 1, cursor: startTvCountdown !== null || resumeCountdown !== null ? "not-allowed" : "pointer" }}
+                      className="tv-start-btn"
+                      disabled={startTvCountdown !== null || resumeCountdown !== null}
+                      onClick={() => {
+                        if (startTvCountdown === null && resumeCountdown === null) {
+                          setStartTvCountdown(null);
+                          advanceToNext();
                         }
                       }}
-                    />
-                  );
-                })()}
+                      title={resumeCountdown !== null ? `Resuming in ${resumeCountdown}s` : startTvCountdown !== null ? `Starting in ${startTvCountdown}s` : "Skip to next video"}
+                    >
+                      <i className="fas fa-play"></i>
+                      <span>{resumeCountdown !== null ? `Resuming in ${resumeCountdown}s` : startTvCountdown !== null ? `Next in ${startTvCountdown}s` : "Start TV"}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Playlist badge */}
+                {currentVideo && tvUserState && (
+                  <div className="tv-shuffle-badge">
+                    <i className="fas fa-list"></i>
+                    {tvUserState.currentIndex + 1} / {tvUserState.playlist.length}
+                  </div>
+                )}
               </div>
 
 

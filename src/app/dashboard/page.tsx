@@ -7,7 +7,7 @@ import { churchConfig } from "@/lib/churchConfig";
 import { auth } from "@/lib/firebase";
 import { useAppStore } from "@/lib/useAppStore";
 import BottomNavBar from "@/components/shared/BottomNavBar";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ToastBridge from "@/components/dashboard/ToastBridge";
 import EventCarousel from "@/components/dashboard/EventCarousel";
@@ -43,7 +43,7 @@ function timeAgo(dateStr: string): string {
    ================================================================== */
 
 const church = {
-  name: "MOUNTAIN OF DELIVERANCE CHURCH",
+  name: "MOD NAKURU",
   tagline: "Worship. Word. Community.",
   logoInitials: "TP",
 };
@@ -324,9 +324,9 @@ interface ScheduleSlot {
 
 function getFallbackSchedule(): ScheduleSlot[] {
   const h = new Date().getHours();
-  if (h < 9) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MOUNTAIN OF DELIVERANCE CHURCH Radio" }];
-  if (h < 12) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: true, hasContent: true, stationName: "MOUNTAIN OF DELIVERANCE CHURCH Radio" }];
-  return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MOUNTAIN OF DELIVERANCE CHURCH Radio" }];
+  if (h < 9) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MOD NAKURU Radio" }];
+  if (h < 12) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: true, hasContent: true, stationName: "MOD NAKURU Radio" }];
+  return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MOD NAKURU Radio" }];
 }
 
 function parseTimeToMinutes(t: string): number {
@@ -426,6 +426,24 @@ export default function DashboardPage() {
   const [recentVideos, setRecentVideos] = useState<YouTubeVideo[]>([]);
   const [weeklyVideos, setWeeklyVideos] = useState<YouTubeVideo[]>([]);
   const [videoGalleryLoading, setVideoGalleryLoading] = useState(true);
+  const [liveTvStatus, setLiveTvStatus] = useState<{isLive: boolean; liveVideoId: string | null; liveTitle: string | null} | null>(null);
+
+  // ─── Live TV status listener (tv_live_status/main in Firestore) ───
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "tv_live_status", "main"), (snap: any) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setLiveTvStatus({
+          isLive: d.isLive || false,
+          liveVideoId: d.liveVideoId || null,
+          liveTitle: d.liveTitle || null,
+        });
+      } else {
+        setLiveTvStatus(null);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Delay full content render to prevent ANR on Android WebView
   useEffect(() => {
@@ -451,8 +469,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (audio.isPlaying) {
       const np = npData?.nowPlaying;
-      const title = np?.song?.title || "MOUNTAIN OF DELIVERANCE CHURCH Radio";
-      const artist = np?.song?.artist || "MOUNTAIN OF DELIVERANCE CHURCH";
+      const title = np?.song?.title || "MOD NAKURU Radio";
+      const artist = np?.song?.artist || "MOD NAKURU";
       const albumArt = np?.song?.albumArt;
       audio.updateMediaSession(title, artist, albumArt);
     }
@@ -637,6 +655,25 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* LIVE TV BANNER — YouTube Live */}
+      {liveTvStatus?.isLive && liveTvStatus.liveVideoId && (
+        <div className="live-banner" style={{ borderLeft: "3px solid #EF4444" }}>
+          <div className="live-banner-left">
+            <div className="live-banner-dot" style={{ background: "#EF4444", animation: "livePulse 1.5s ease-in-out infinite" }}></div>
+            <div className="live-banner-info">
+              <div className="live-banner-title">
+                📺 {liveTvStatus.liveTitle || "Church TV"} is live
+              </div>
+              <div className="live-banner-sub">
+                Live TV · Click to watch
+              </div>
+            </div>
+          </div>
+          <button className="live-banner-btn" onClick={() => router.push("/live")}>
+            <i className="fas fa-play"></i> Watch Now
+          </button>
+        </div>
+      )}
 
       {/* ===== LIVE TV (served from Vercel on APK, direct on web) ===== */}
       <LiveTvEmbed navTo="/tv" />
@@ -838,7 +875,7 @@ export default function DashboardPage() {
                 <div className="st-time">{slot.time}</div>
                 <div className="st-body">
                   <div className={`st-label${slot.isNow ? "" : " upcoming"}`}>{slot.label}</div>
-                  <div className="st-station"><i className="fas fa-radio"></i> {slot.stationName || "MOUNTAIN OF DELIVERANCE CHURCH Radio"}</div>
+                  <div className="st-station"><i className="fas fa-radio"></i> {slot.stationName || "MOD NAKURU Radio"}</div>
                 </div>
                 {slot.isNow && <span className="st-now-badge">NOW</span>}
               </div>

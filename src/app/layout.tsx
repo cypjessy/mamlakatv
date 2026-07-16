@@ -9,13 +9,13 @@ import UpdateChecker from "@/components/shared/UpdateChecker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MOUNTAIN OF DELIVERANCE CHURCH",
+  title: "MOD NAKURU",
   description:
-    "MOUNTAIN OF DELIVERANCE CHURCH connects you to live radio, sermons, videos, and community — anywhere, anytime.",
+    "MOD NAKURU connects you to live radio, sermons, videos, and community — anywhere, anytime.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MOUNTAIN OF DELIVERANCE CHURCH",
+    title: "MOD NAKURU",
   },
   icons: {
     icon: "/favicon.ico",

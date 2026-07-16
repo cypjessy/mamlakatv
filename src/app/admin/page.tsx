@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 
 import AlbumArt from "@/components/shared/AlbumArt";
 import { signOut as firebaseSignOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useAppStore } from "@/lib/useAppStore";
 import { getNowPlaying as azuracastGetNowPlaying, getSongHistory, getStationStatus, getQueue, toggleAutoDJ, getStreamers, deleteStreamer, getStationId } from "@/lib/azuracast";
 import type { QueueItem, Streamer, Playlist } from "@/lib/azuracast";
@@ -110,6 +111,24 @@ export default function AdminPage() {
   const [autoDJToggling, setAutoDJToggling] = useState(false);
   const [liveStreamers, setLiveStreamers] = useState<Streamer[]>([]);
   const [streamDeletingId, setStreamDeletingId] = useState<string | null>(null);
+  const [liveTvStatus, setLiveTvStatus] = useState<{isLive: boolean; liveVideoId: string | null; liveTitle: string | null} | null>(null);
+
+  // ─── Live TV status listener ───
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "tv_live_status", "main"), (snap: any) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setLiveTvStatus({
+          isLive: d.isLive || false,
+          liveVideoId: d.liveVideoId || null,
+          liveTitle: d.liveTitle || null,
+        });
+      } else {
+        setLiveTvStatus(null);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const [stationUptime, setStationUptime] = useState("");
 
@@ -1321,6 +1340,22 @@ export default function AdminPage() {
       {/* ===== MAIN APP ===== */}
       <div className="app-container">
         <PremiumTopBar minimal />
+
+        {/* LIVE TV BANNER */}
+        {liveTvStatus?.isLive && liveTvStatus.liveVideoId && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", margin: "0 14px", borderRadius: 10, background: "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02))", border: "1px solid rgba(239,68,68,0.15)", cursor: "pointer", animation: "tvStartIn 0.35s ease" }} onClick={() => router.push("/live")}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444", animation: "livePulse 1.5s ease-in-out infinite", flexShrink: 0 }}></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                📺 {liveTvStatus.liveTitle || "Church TV"} is live
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>Click to watch Live TV</div>
+            </div>
+            <button style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #EF4444, #DC2626)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+              <i className="fas fa-play"></i> Watch
+            </button>
+          </div>
+        )}
 
         {/* HEADER */}
         <header className="dash-header">
