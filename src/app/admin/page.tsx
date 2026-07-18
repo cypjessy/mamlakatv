@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import AlbumArt from "@/components/shared/AlbumArt";
 import { signOut as firebaseSignOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { useAppStore } from "@/lib/useAppStore";
 import { getNowPlaying as azuracastGetNowPlaying, getSongHistory, getStationStatus, getQueue, toggleAutoDJ, getStreamers, deleteStreamer, getStationId } from "@/lib/azuracast";
 import type { QueueItem, Streamer, Playlist } from "@/lib/azuracast";
 
 import AdminBottomNav from "@/components/admin/AdminBottomNav";
 import ToastBridge from "@/components/dashboard/ToastBridge";
+import ShareAppQrModal from "@/components/shared/ShareAppQrModal";
 import EventCarousel from "@/components/dashboard/EventCarousel";
 import AlbumCarousel from "@/components/shared/AlbumCarousel";
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
@@ -92,12 +93,21 @@ export default function AdminPage() {
   const storeChurchConfig = useAppStore((s) => s.churchConfig);
   const churchInfo = {
     name: storeChurchConfig?.name || "Church",
+    shortName: (() => {
+      const full = storeChurchConfig?.name || "Church";
+      // e.g., "Mountain of Deliverance Nakuru Church" -> "MOD Nakuru"
+      const words = full.split(" ").filter((w:string) => w.length > 0);
+      const initials = words.map((w:string) => w[0]).join("").toUpperCase();
+      const city = words.length >= 4 ? words[words.length - 2] : words[words.length - 1];
+      return `${initials.slice(0, 3)} ${city}`.trim();
+    })(),
     tagline: storeChurchConfig?.tagline || "",
     logoInitials: (storeChurchConfig?.name || "CH").split(" ").map((w:string) => w[0]).join("").slice(0, 3).toUpperCase(),
   };
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<string>("7days");
   const [showSetup, setShowSetup] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   /* Radio real-time state (polled from AzuraCast) */
   const [radioNP, setRadioNP] = useState<import("@/lib/azuracast").NowPlayingData | null>(null);
@@ -112,6 +122,7 @@ export default function AdminPage() {
   const [liveStreamers, setLiveStreamers] = useState<Streamer[]>([]);
   const [streamDeletingId, setStreamDeletingId] = useState<string | null>(null);
   const [liveTvStatus, setLiveTvStatus] = useState<{isLive: boolean; liveVideoId: string | null; liveTitle: string | null} | null>(null);
+  const [updateNotif, setUpdateNotif] = useState<{versionName: string; downloadUrl: string; sentAt: any} | null>(null);
 
   // ─── Live TV status listener ───
   useEffect(() => {
@@ -125,6 +136,19 @@ export default function AdminPage() {
         });
       } else {
         setLiveTvStatus(null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // ─── App update notification listener ───
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "update_notifications", "latest"), (snap: any) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.downloadUrl) {
+          setUpdateNotif({ versionName: d.versionName || "", downloadUrl: d.downloadUrl, sentAt: d.sentAt });
+        }
       }
     });
     return () => unsub();
@@ -390,7 +414,7 @@ export default function AdminPage() {
 
         /* ========== HEADER ========== */
         .dash-header {
-            padding: 8px 16px 10px;
+            padding: 6px 12px 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -399,18 +423,19 @@ export default function AdminPage() {
             border-bottom: 1px solid var(--border);
             position: relative;
             z-index: 100;
+            gap: 6px;
         }
-        .dash-header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-        .dash-header-logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; font-weight: 800; color: #fff; }
-        .dash-header-info { min-width: 0; }
-        .dash-header-info h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
-        .dash-header-info .tagline { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
+        .dash-header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+        .dash-header-logo { width: 32px; height: 32px; background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; font-weight: 800; color: #fff; }
+        .dash-header-info { min-width: 0; overflow: hidden; }
+        .dash-header-info h1 { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dash-header-info .tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; }
 
-        .dash-header-center { display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+        .dash-header-center { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
         .dash-onair-badge {
-            display: flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 3px;
+            padding: 2px 8px; border-radius: 12px;
+            font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
         }
         .dash-onair-badge.live {
             background: rgba(74,222,128,0.12); color: var(--success);
@@ -454,19 +479,20 @@ export default function AdminPage() {
         .live-banner-btn:active { transform: scale(0.95); opacity: 0.9; }
 
         .dash-listener-count {
-            display: flex; align-items: center; gap: 4px;
-            font-size: 12px; font-weight: 600; color: var(--text-secondary);
-            background: var(--surface); border-radius: 12px; padding: 4px 10px;
+            display: flex; align-items: center; gap: 3px;
+            font-size: 10px; font-weight: 600; color: var(--text-secondary);
+            background: var(--surface); border-radius: 10px; padding: 2px 7px;
             border: 1px solid var(--border);
+            flex-shrink: 0;
         }
-        .dash-listener-count i { font-size: 12px; color: var(--primary); }
+        .dash-listener-count i { font-size: 10px; color: var(--primary); }
 
-        .dash-header-right { position: relative; }
+        .dash-header-right { position: relative; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
         .dash-avatar-btn {
-            width: 36px; height: 36px; border-radius: var(--radius-full);
+            width: 32px; height: 32px; border-radius: var(--radius-full);
             background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
             border: 2px solid var(--surface-elevated); color: #fff;
-            font-size: 13px; font-weight: 700; cursor: pointer;
+            font-size: 11px; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: all 0.2s ease;
         }
@@ -1298,6 +1324,39 @@ export default function AdminPage() {
         .section-link:active { background: rgba(232,168,56,0.1); }
       `}</style>
 
+      {updateNotif && (
+        <div style={{
+          padding: "10px 16px", background: "linear-gradient(135deg, rgba(232,168,56,0.12), rgba(212,118,42,0.06))",
+          borderBottom: "1px solid rgba(232,168,56,0.15)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#E8A838" }}>📲 App Update Available</div>
+            <div style={{ fontSize: 11, color: "#A0A0A0", marginTop: 1 }}>Tap to download the latest version</div>
+          </div>
+          <a
+            href={updateNotif.downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "7px 16px", borderRadius: 10, background: "linear-gradient(135deg, #E8A838, #D4762A)",
+              color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+              textDecoration: "none", whiteSpace: "nowrap",
+            }}
+          >
+            <i className="fas fa-download"></i> Download
+          </a>
+          <button
+            onClick={async () => {
+              setUpdateNotif(null);
+              try { await deleteDoc(doc(db, "update_notifications", "latest")); } catch {}
+            }}
+            style={{ background: "none", border: "none", color: "#6B6B6B", cursor: "pointer", fontSize: 14, padding: 4 }}
+          >
+            <i className="fas fa-xmark"></i>
+          </button>
+        </div>
+      )}
+      <ShareAppQrModal open={showQr} onClose={() => setShowQr(false)} />
       <ToastBridge />
 
       {/* ===== SETUP CHECKLIST ===== */}
@@ -1363,8 +1422,10 @@ export default function AdminPage() {
             <div className="dash-header-logo">
               <i className="fas fa-cross"></i>
             </div>
-            <div className="dash-header-info">
-              <h1>{churchInfo.name}</h1>
+            <div className="dash-header-info" style={{ minWidth: 0, overflow: "hidden" }}>
+              <h1 style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={churchInfo.name}>
+                {churchInfo.shortName}
+              </h1>
             </div>
           </div>
 
@@ -1380,6 +1441,14 @@ export default function AdminPage() {
           </div>
 
           <div className="dash-header-right" ref={dropdownRef}>
+            <button
+              className="dash-avatar-btn"
+              onClick={() => setShowQr(true)}
+              title="Share App"
+              style={{ background: "none", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 15 }}
+            >
+              <i className="fas fa-share-nodes"></i>
+            </button>
             <button
               className="dash-avatar-btn"
               onClick={() => setShowProfileDropdown((p) => !p)}

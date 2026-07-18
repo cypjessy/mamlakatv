@@ -10,6 +10,7 @@ import BottomNavBar from "@/components/shared/BottomNavBar";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ToastBridge from "@/components/dashboard/ToastBridge";
+import ShareAppQrModal from "@/components/shared/ShareAppQrModal";
 import EventCarousel from "@/components/dashboard/EventCarousel";
 import AlbumCarousel from "@/components/shared/AlbumCarousel";
 import { useImageLightbox } from "@/components/shared/ImageLightbox";
@@ -421,12 +422,14 @@ export default function DashboardPage() {
   const [scheduleItems, setScheduleItems] = useState<ScheduleSlot[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [contentReady, setContentReady] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   // ─── Video Gallery ───
   const [recentVideos, setRecentVideos] = useState<YouTubeVideo[]>([]);
   const [weeklyVideos, setWeeklyVideos] = useState<YouTubeVideo[]>([]);
   const [videoGalleryLoading, setVideoGalleryLoading] = useState(true);
   const [liveTvStatus, setLiveTvStatus] = useState<{isLive: boolean; liveVideoId: string | null; liveTitle: string | null} | null>(null);
+  const [updateNotif, setUpdateNotif] = useState<{versionName: string; downloadUrl: string; sentAt: any} | null>(null);
 
   // ─── Live TV status listener (tv_live_status/main in Firestore) ───
   useEffect(() => {
@@ -440,6 +443,23 @@ export default function DashboardPage() {
         });
       } else {
         setLiveTvStatus(null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // ─── App update notification listener ───
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "update_notifications", "latest"), (snap: any) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.downloadUrl) {
+          setUpdateNotif({
+            versionName: d.versionName || "latest",
+            downloadUrl: d.downloadUrl,
+            sentAt: d.sentAt || null,
+          });
+        }
       }
     });
     return () => unsub();
@@ -1901,7 +1921,60 @@ export default function DashboardPage() {
         }
       `}</style>
 
+      <ShareAppQrModal open={showQr} onClose={() => setShowQr(false)} />
       <ToastBridge />
+      {updateNotif && (
+        <div style={{
+          position: "relative",
+          margin: "0 12px 8px",
+          padding: "10px 14px",
+          borderRadius: 12,
+          background: "linear-gradient(135deg, #E8A838, #D4762A)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}>
+          <div style={{ fontSize: 20 }}>📲</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>App Update Available</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>Tap to download the latest version</div>
+          </div>
+          <a
+            href={updateNotif.downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              flexShrink: 0,
+              padding: "7px 14px",
+              borderRadius: 20,
+              background: "rgba(0,0,0,0.25)",
+              color: "#fff",
+              border: "none",
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: "pointer",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Download
+          </a>
+          <button
+            onClick={() => setUpdateNotif(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 16,
+              cursor: "pointer",
+              padding: "4px",
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ===== ONBOARDING ===== */}
       {showOnboarding && (
@@ -1953,6 +2026,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="dh-right">
+            <button className="dh-btn" onClick={() => setShowQr(true)} title="Share App">
+              <i className="fas fa-share-nodes"></i>
+            </button>
             <button className="dh-btn logout" onClick={handleLogout} title="Sign out">
               <i className="fas fa-right-from-bracket"></i>
             </button>

@@ -1823,7 +1823,7 @@ export default function AdminTVPage() {
         .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
         .content-scroll::-webkit-scrollbar { display: none; }
 
-        .section { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+        .section { padding: 0 12px 16px; display: flex; flex-direction: column; gap: 12px; }
 
 
         .channel-card {
@@ -2808,7 +2808,7 @@ export default function AdminTVPage() {
 
         {/* CONTENT */}        <div className="content-scroll">
           {/* ─── PLAYER SECTION (YouTube embed via TvPlayerProvider portal) ─── */}
-          <div className="tv-top-wrap" style={{ margin: "0 calc(-1 * var(--section-px, 16px))" }}>
+          <div className="tv-top-wrap">
             <div className="tv-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px" }}>
               <div className="tv-station" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700 }}>
                 <i className="fas fa-tv" style={{ color: "#3B82F6", fontSize: 14 }}></i>
@@ -2896,63 +2896,7 @@ export default function AdminTVPage() {
 
           </div>
 
-          {/* TV CARD — outside section wrapper for edge-to-edge */}
-            {!loading && activeAdminTab === "channel" && channel && (
-              <section className="feed-section">
-                <div className="tv-top-wrap">
-                  <div className="tv-top">
-                    <div className="tv-station">
-                      <i className="fas fa-tv"></i>
-                      <span>Church TV</span>
-                    </div>
-                    <div className="tv-badges">
-                      <div className={`tv-live-badge ${currentVideo ? "live" : "off"}`}>
-                        <span className="tv-live-dot"></span>
-                        {currentVideo ? "On Air" : "Off Air"}
-                      </div>
-                      <div className="tv-sub-badge">
-                        <i className="fas fa-users"></i>
-                        {channel?.subscriberCount || "—"}
-                      </div>
-                    </div>
-                    {startTvCountdown !== null && (
-                      <button
-                        className="tv-start-badge"
-                        onClick={() => {
-                          setStartTvCountdown(null);
-                          advanceTvVideo();
-                        }}
-                      >
-                        <i className="fas fa-play"></i>
-                        Start TV
-                        <span className="tv-start-badge-count">{startTvCountdown}s</span>
-                      </button>
-                    )}
-                  </div>
-
-
-
-                  <div className="tv-channel-strip">
-                    <div className="tv-channel-avatar">
-                      {channel.thumbnail ? (
-                        <img src={channel.thumbnail.replace(/^http:/, 'https:')} alt={channel.title} referrerPolicy="no-referrer" crossOrigin="anonymous" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : (
-                        <i className="fab fa-youtube"></i>
-                      )}
-                    </div>
-                    <div className="tv-channel-info">
-                      <div className="tv-channel-name">{channel.title}</div>
-                      <div className="tv-channel-meta">{videoCount} videos</div>
-                    </div>
-                    <button className="tv-watch-btn" onClick={() => router.push("/tv")}>
-                      <i className="fas fa-expand"></i> Manage
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {loading ? (
+          {loading ? (
               <div className="tv-loading-screen">
                 <div className="tv-loading-ring">
                   <div className="tv-loading-ring-inner"></div>
