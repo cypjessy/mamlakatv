@@ -147,7 +147,7 @@ export default function YoutubeEmbed({
       pendingSeekRef.current = null;
       if (pollRef.current) {
         clearInterval(pollRef.current);
-        pollRef.current = undefined;
+        pollRef.current = null;
       }
       // Save current position before destroying the player
       try {
