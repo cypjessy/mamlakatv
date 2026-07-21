@@ -47,7 +47,7 @@ export default function YoutubeEmbed({
   const videoIdRef = useRef(videoId);
   const onEndedRef = useRef(onEnded);
   const onTimeUpdateRef = useRef(onTimeUpdate);
-  const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const initialSeekRef = useRef(initialSeek);
   initialSeekRef.current = initialSeek;
