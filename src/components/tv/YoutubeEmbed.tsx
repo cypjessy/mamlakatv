@@ -130,7 +130,7 @@ export default function YoutubeEmbed({
             if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
               if (pollRef.current) {
                 clearInterval(pollRef.current);
-                pollRef.current = undefined;
+                pollRef.current = null;
               }
             }
           },
