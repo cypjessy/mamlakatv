@@ -155,7 +155,7 @@ export default function ShareAppQrModal({ open, onClose }: ShareAppQrModalProps)
         }
         .qr-btn:active { transform: scale(0.97); }
         .qr-btn.primary {
-          background: linear-gradient(135deg, #7048E8, #9775FA);
+          background: linear-gradient(135deg, #D97706, #F59E0B);
           color: #fff;
         }
         .qr-btn.secondary {
@@ -188,7 +188,7 @@ export default function ShareAppQrModal({ open, onClose }: ShareAppQrModalProps)
       <div className="qr-overlay" onClick={onClose}>
         <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
           <div className="qr-title">
-            <i className="fas fa-share-nodes" style={{ color: "#7048E8", marginRight: 8 }}></i>
+            <i className="fas fa-share-nodes" style={{ color: "#D97706", marginRight: 8 }}></i>
             Share App
           </div>
           <div className="qr-sub">

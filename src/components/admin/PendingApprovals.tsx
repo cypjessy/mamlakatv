@@ -11,7 +11,7 @@ interface PendingMember {
 }
 
 const pendingMembers: PendingMember[] = [
-  { name: "Grace Wanjiku", email: "grace.w@email.com", initials: "GW", color: "#8B5CF6", time: "Requested 2h ago" },
+  { name: "Grace Wanjiku", email: "grace.w@email.com", initials: "GW", color: "#D97706", time: "Requested 2h ago" },
   { name: "Peter Ochieng", email: "peter.o@email.com", initials: "PO", color: "#3B82F6", time: "Requested 5h ago" },
   { name: "Mary Njeri", email: "mary.n@email.com", initials: "MN", color: "#22C55E", time: "Requested 1d ago" },
 ];

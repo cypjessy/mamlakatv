@@ -79,7 +79,7 @@ export default function AppUpdateBubble({ update, onDismiss }: Props) {
           width: 52px;
           height: 52px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #A78BFA, #7C3AED);
+          background: linear-gradient(135deg, var(--primary), var(--primary-dark));
           border: none;
           cursor: pointer;
           position: relative;
@@ -142,7 +142,7 @@ export default function AppUpdateBubble({ update, onDismiss }: Props) {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, #A78BFA, #7C3AED, #A78BFA);
+          background: linear-gradient(90deg, #D97706, #B45309, #D97706);
           background-size: 200% 100%;
           animation: aub-shimmer 3s ease-in-out infinite;
         }
@@ -200,7 +200,7 @@ export default function AppUpdateBubble({ update, onDismiss }: Props) {
         }
         .aub-card-icon {
           font-size: 18px;
-          color: #A78BFA;
+          color: #F59E0B;
         }
         .aub-content {
           flex: 1;
@@ -225,7 +225,7 @@ export default function AppUpdateBubble({ update, onDismiss }: Props) {
           margin-top: 10px;
           padding: 8px 18px;
           border-radius: 10px;
-          background: linear-gradient(135deg, #A78BFA, #7C3AED);
+          background: linear-gradient(135deg, var(--primary), var(--primary-dark));
           color: #fff;
           font-size: 12px;
           font-weight: 700;

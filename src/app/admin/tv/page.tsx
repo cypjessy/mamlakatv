@@ -981,7 +981,7 @@ export default function AdminTVPage() {
             const dayName = p.dayOfWeek !== null ? ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.dayOfWeek] : "";
             return (
               <div key={p.id} className="preview-card" style={{ alignItems: "center" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg, rgba(112,72,232,0.12), rgba(112,72,232,0.04))`, border: "1px solid rgba(112,72,232,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "var(--primary)" }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg, rgba(217,119,6,0.12), rgba(217,119,6,0.04))`, border: "1px solid rgba(217,119,6,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "var(--primary)" }}>
                   <i className="fas fa-list"></i>
                 </div>
                 <div className="preview-info" style={{ flex: 1 }}>
@@ -1038,13 +1038,13 @@ export default function AdminTVPage() {
                 {viewerCount > 0 ? "Watching now" : "No active viewers"}
               </div>
             </div>
-            <div className="live-stat-card" style={{ borderColor: "rgba(112,72,232,0.2)" }}>
+            <div className="live-stat-card" style={{ borderColor: "rgba(217,119,6,0.2)" }}>
               <div className="live-stat-value" style={{ color: "var(--primary)" }}>{liveChatMsgs.length}</div>
               <div className="live-stat-label">Chat Messages</div>
               <div className="live-stat-sub">{uniqueChatters} unique chatters</div>
             </div>
             <div className="live-stat-card" style={{ borderColor: "rgba(139,92,246,0.2)" }}>
-              <div className="live-stat-value" style={{ color: "#8B5CF6" }}>{livePrayers.length}</div>
+              <div className="live-stat-value" style={{ color: "#D97706" }}>{livePrayers.length}</div>
               <div className="live-stat-label">Prayer Requests</div>
               <div className="live-stat-sub">{livePrayers.filter((p) => !p.replyText).length} unreplied</div>
             </div>
@@ -1530,13 +1530,13 @@ export default function AdminTVPage() {
     <>
       <style>{`
         :root {
-          --primary: #9775FA; --primary-light: #B197FC; --primary-dark: #7048E8;
-          --bg: #15111F;
-          --surface: #1A1625; --surface-elevated: #241E33;
-          --surface-card: #1E1A2A; --surface-hover: #2A2438;
+          --primary: #D97706; --primary-light: #F59E0B; --primary-dark: #B45309;
+          --bg: #161213;
+          --surface: #1E1819; --surface-elevated: #2A1E1F;
+          --surface-card: #221819; --surface-hover: #2A1E1F;
           --text-primary: #FFFFFF; --text-secondary: #A0A0A0; --text-tertiary: #6B6B6B;
-          --border: #2A2438; --error: #FF6B6B; --success: #4ADE80;
-          --gradient-start: #7048E8; --gradient-end: #9775FA;
+          --border: #3A2425; --error: #FF6B6B; --success: #4ADE80;
+          --gradient-start: #D97706; --gradient-end: #F59E0B;
           --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px; --radius-xl: 24px;
           --radius-full: 50%;
         }
@@ -1574,7 +1574,7 @@ export default function AdminTVPage() {
           width: 56px; height: 56px; border-radius: 50%;
           overflow: hidden; flex-shrink: 0;
           background: var(--surface-elevated);
-          border: 2px solid rgba(112,72,232,0.15);
+          border: 2px solid rgba(217,119,6,0.15);
         }
         .channel-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .channel-avatar-fallback {
@@ -1609,7 +1609,7 @@ export default function AdminTVPage() {
           font-size: 14px; font-weight: 500; outline: none;
           transition: all 0.2s;
         }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(112,72,232,0.08); }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
         .form-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
         .form-hint { font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
         .form-hint i { font-size: 10px; }
@@ -1711,7 +1711,7 @@ export default function AdminTVPage() {
           font-size: 10px; backdrop-filter: blur(4px);
         }
         .tv-grid-card-badge.featured {
-          background: rgba(112,72,232,0.85); color: #fff;
+          background: rgba(217,119,6,0.85); color: #fff;
         }
         .tv-grid-card-badge.hidden {
           background: rgba(107,107,107,0.85); color: #fff;
@@ -1787,25 +1787,25 @@ export default function AdminTVPage() {
         }
         .tv-loading-ring {
           width: 72px; height: 72px; border-radius: 50%;
-          border: 3px solid rgba(112,72,232,0.08);
-          border-top-color: #9775FA; border-right-color: #9775FA;
+          border: 3px solid rgba(217,119,6,0.08);
+          border-top-color: #D97706; border-right-color: #D97706;
           animation: tvLoadingSpin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
           display: flex; align-items: center; justify-content: center;
           position: relative;
         }
         .tv-loading-ring-inner {
           width: 48px; height: 48px; border-radius: 50%;
-          border: 2px solid rgba(112,72,232,0.06);
-          border-bottom-color: #9775FA; border-left-color: #9775FA;
+          border: 2px solid rgba(217,119,6,0.06);
+          border-bottom-color: #D97706; border-left-color: #D97706;
           animation: tvLoadingSpin 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
         }
         .tv-loading-icon {
-          position: absolute; font-size: 20px; color: #9775FA;
+          position: absolute; font-size: 20px; color: #D97706;
           animation: tvLoadingPulse 1.6s ease-in-out infinite;
         }
         .tv-loading-brand {
           margin-top: 24px; font-size: 15px; font-weight: 800;
-          letter-spacing: -0.3px; color: #9775FA;
+          letter-spacing: -0.3px; color: #D97706;
           animation: tvLoadingFade 1.6s ease-in-out infinite;
         }
         .tv-loading-dots {
@@ -1813,7 +1813,7 @@ export default function AdminTVPage() {
         }
         .tv-loading-dot {
           width: 6px; height: 6px; border-radius: 50%;
-          background: #9775FA;
+          background: #D97706;
           animation: tvLoadingBounce 1.2s ease-in-out infinite;
         }
         .tv-loading-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -2015,7 +2015,7 @@ export default function AdminTVPage() {
           display: flex; align-items: center; gap: 6px;
           white-space: nowrap; flex-shrink: 0;
         }
-        .live-sub-tab.active { background: rgba(112,72,232,0.12); border-color: var(--primary); color: var(--primary); }
+        .live-sub-tab.active { background: rgba(217,119,6,0.12); border-color: var(--primary); color: var(--primary); }
         .live-sub-tab:active { transform: scale(0.95); }
         .live-sub-badge {
           position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%;
@@ -2115,8 +2115,8 @@ export default function AdminTVPage() {
         .tv-prayer-reply-header {
           display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
         }
-        .tv-prayer-reply-header i { font-size: 10px; color: #8B5CF6; }
-        .tv-prayer-reply-name { font-size: 11px; font-weight: 700; color: #8B5CF6; }
+        .tv-prayer-reply-header i { font-size: 10px; color: #D97706; }
+        .tv-prayer-reply-name { font-size: 11px; font-weight: 700; color: #D97706; }
         .tv-prayer-reply-time { font-size: 9px; color: var(--text-tertiary); margin-left: auto; }
         .tv-prayer-reply-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
 
@@ -2137,7 +2137,7 @@ export default function AdminTVPage() {
           font-size: 12px; outline: none; font-family: inherit; resize: vertical;
           transition: all 0.2s; margin-bottom: 6px;
         }
-        .live-prayer-reply-input:focus { border-color: #8B5CF6; box-shadow: 0 0 0 2px rgba(139,92,246,0.1); }
+        .live-prayer-reply-input:focus { border-color: #D97706; box-shadow: 0 0 0 2px rgba(217,119,6,0.1); }
         .live-prayer-reply-actions {
           display: flex; gap: 8px; justify-content: flex-end;
         }
@@ -2150,7 +2150,7 @@ export default function AdminTVPage() {
         .live-prayer-reply-cancel:active { background: var(--surface-elevated); }
         .live-prayer-reply-send {
           padding: 6px 14px; border-radius: 6px;
-          background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+          background: linear-gradient(135deg, #D97706, #B45309);
           border: none; color: #fff; font-size: 11px; font-weight: 700;
           cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit;
           transition: all 0.15s;
@@ -2174,7 +2174,7 @@ export default function AdminTVPage() {
           cursor: pointer; transition: all 0.15s ease; position: relative;
           display: flex; align-items: center; gap: 6px;
         }
-        .giving-sub-tab.active { background: rgba(112,72,232,0.12); border-color: var(--primary); color: var(--primary); }
+        .giving-sub-tab.active { background: rgba(217,119,6,0.12); border-color: var(--primary); color: var(--primary); }
         .giving-sub-tab:active { transform: scale(0.95); }
         .giving-sub-badge {
           position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%;
@@ -2185,7 +2185,7 @@ export default function AdminTVPage() {
         /* ─── Payment Method Cards ─── */
         .pm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; }
         .pm-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .pm-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(112,72,232,0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .pm-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(217,119,6,0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
         .pm-info { flex: 1; min-width: 0; }
         .pm-name { font-size: 14px; font-weight: 700; }
         .pm-type { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.2px; }
@@ -2196,7 +2196,7 @@ export default function AdminTVPage() {
         .pm-btn { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 4px; }
         .pm-btn:active { transform: scale(0.95); }
         .pm-btn.edit { background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border); }
-        .pm-btn.toggle { background: rgba(112,72,232,0.1); color: var(--primary); }
+        .pm-btn.toggle { background: rgba(217,119,6,0.1); color: var(--primary); }
         .pm-btn.danger { background: rgba(239,68,68,0.1); color: var(--error); }
 
         /* ─── Transaction Cards ─── */

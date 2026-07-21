@@ -76,7 +76,7 @@ export class RootErrorBoundary extends Component<Props, State> {
             }
             .reb-btn:active { transform: scale(0.95); }
             .reb-btn.primary {
-              background: linear-gradient(135deg, #7048E8, #9775FA);
+              background: linear-gradient(135deg, #D97706, #F59E0B);
               color: #fff;
             }
             .reb-btn.secondary {

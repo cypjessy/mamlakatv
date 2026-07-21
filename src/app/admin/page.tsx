@@ -203,7 +203,7 @@ export default function AdminPage() {
       value: String(radioSongsPlayedToday || "..."),
       label: "Songs played today",
       subtitle: radioBackendRunning ? `AutoDJ ${radioHistory.length > 0 ? "· " + radioHistory[0]?.song?.title || "" : ""}` : "Station offline",
-      colorCode: "#8B5CF6",
+      colorCode: "#D97706",
     },
   ];
 
@@ -355,29 +355,29 @@ export default function AdminPage() {
     <>
       <style>{`
         :root {
-            --primary: #9775FA;
-            --primary-light: #B197FC;
-            --primary-dark: #7048E8;
-            --bg: #15111F;
-            --surface: #1A1625;
-            --surface-elevated: #241E33;
-            --surface-card: #1E1A2A;
-            --surface-hover: #2A2438;
+            --primary: #D97706;
+            --primary-light: #F59E0B;
+            --primary-dark: #B45309;
+            --bg: #161213;
+            --surface: #1E1819;
+            --surface-elevated: #2A1E1F;
+            --surface-card: #221819;
+            --surface-hover: #2A1E1F;
             --text-primary: #FFFFFF;
             --text-secondary: #A0A0A0;
             --text-tertiary: #6B6B6B;
-            --border: #2A2438;
+            --border: #3A2425;
             --error: #FF6B6B;
             --success: #4ADE80;
-            --info: #3B82F6;
+            --info: #38BDF8;
             --warning: #F59E0B;
-            --overlay: rgba(21,17,31,0.92);
-            --gradient-start: #7048E8;
-            --gradient-end: #9775FA;
-            --gradient-purple: #8B5CF6;
+            --overlay: rgba(22,18,19,0.92);
+            --gradient-start: #D97706;
+            --gradient-end: #F59E0B;
+            --gradient-purple: #D97706;
             --gradient-blue: #3B82F6;
             --gradient-green: #22C55E;
-            --shadow-soft: 0 4px 20px rgba(112,72,232,0.15);
+            --shadow-soft: 0 4px 20px rgba(217,119,6,0.15);
             --shadow-elevated: 0 8px 32px rgba(0,0,0,0.45);
             --radius-sm: 12px;
             --radius-md: 16px;
@@ -530,7 +530,7 @@ export default function AdminPage() {
         .dash-np-info { flex: 1; min-width: 0; }
         .dash-np-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .dash-np-artist { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .dash-np-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 8px; background: rgba(112,72,232,0.12); color: var(--primary); flex-shrink: 0; }
+        .dash-np-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 8px; background: rgba(217,119,6,0.12); color: var(--primary); flex-shrink: 0; }
 
         /* ========== STAT CARDS ========== */
         .stats-grid {
@@ -656,7 +656,7 @@ export default function AdminPage() {
         }
         .chart-bar {
             flex: 1; border-radius: 3px 3px 0 0;
-            background: linear-gradient(180deg, var(--gradient-start), rgba(112,72,232,0.3));
+            background: linear-gradient(180deg, var(--gradient-start), rgba(217,119,6,0.3));
             transition: height 0.5s ease; position: relative; min-height: 4px;
         }
         .chart-bar.today { background: linear-gradient(180deg, var(--gradient-blue), rgba(59,130,246,0.3)); }
@@ -684,7 +684,7 @@ export default function AdminPage() {
         .glance-np-artist { font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
         .glance-np-source { flex-shrink:0; }
         .source-badge { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;padding:3px 8px;border-radius:8px; }
-        .source-badge.auto { background:rgba(112,72,232,0.12);color:var(--primary); }
+        .source-badge.auto { background:rgba(217,119,6,0.12);color:var(--primary); }
         .source-badge.off { background:rgba(107,107,107,0.12);color:var(--text-tertiary); }
 
         .glance-queue { margin-bottom:10px; }
@@ -720,7 +720,7 @@ export default function AdminPage() {
             background: var(--surface); border: 1px solid var(--border); color: var(--text-tertiary);
             cursor: pointer; transition: all 0.15s ease;
         }
-        .chart-period-btn.active { background: rgba(112,72,232,0.12); border-color: var(--primary); color: var(--primary); }
+        .chart-period-btn.active { background: rgba(217,119,6,0.12); border-color: var(--primary); color: var(--primary); }
         .chart-period-btn:active { transform: scale(0.95); }
 
         /* ========== ACTIVITY FEED ========== */
@@ -749,7 +749,7 @@ export default function AdminPage() {
         .act-thumb { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; }
         .act-count {
           margin-left: auto; font-size: 10px; font-weight: 700; text-transform: none; letter-spacing: 0;
-          background: rgba(112,72,232,0.12); color: var(--primary);
+          background: rgba(217,119,6,0.12); color: var(--primary);
           padding: 1px 8px; border-radius: 10px;
         }
         .act-empty {
@@ -757,7 +757,7 @@ export default function AdminPage() {
           display: flex; flex-direction: column; align-items: center; gap: 2px;
         }
         .act-empty p { font-size: 13px; color: var(--text-secondary); }
-        .activity-icon.gold { background: rgba(112,72,232,0.12); color: var(--primary); }
+        .activity-icon.gold { background: rgba(217,119,6,0.12); color: var(--primary); }
         .activity-icon.green { background: rgba(34,197,94,0.12); color: var(--success); }
         .activity-icon.blue { background: rgba(59,130,246,0.12); color: var(--info); }
         .activity-icon.purple { background: rgba(139,92,246,0.12); color: var(--gradient-purple); }
@@ -839,7 +839,7 @@ export default function AdminPage() {
             font-size: 11px; font-weight: 600; color: var(--primary);
             background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px;
         }
-        .status-action:active { background: rgba(112,72,232,0.1); }
+        .status-action:active { background: rgba(217,119,6,0.1); }
 
         .status-uptime { font-size: 12px; color: var(--text-tertiary); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
@@ -962,7 +962,7 @@ export default function AdminPage() {
             display: flex; align-items: center; justify-content: center; font-size: 14px;
         }
         .cs-icon.blue { background: rgba(59,130,246,0.12); color: var(--info); }
-        .cs-icon.gold { background: rgba(112,72,232,0.12); color: var(--primary); }
+        .cs-icon.gold { background: rgba(217,119,6,0.12); color: var(--primary); }
         .cs-icon.purple { background: rgba(139,92,246,0.12); color: var(--gradient-purple); }
         .cs-info { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; }
         .cs-label { font-size: 13px; font-weight: 600; }
@@ -1099,7 +1099,7 @@ export default function AdminPage() {
         .toast-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .toast-icon.success { background: rgba(74,222,128,0.15); color: var(--success); }
         .toast-icon.error { background: rgba(255,107,107,0.15); color: var(--error); }
-        .toast-icon.info { background: rgba(112,72,232,0.15); color: var(--primary); }
+        .toast-icon.info { background: rgba(217,119,6,0.15); color: var(--primary); }
         .toast-content { flex: 1; }
         .toast-content .title { font-size: 14px; font-weight: 600; }
         .toast-content .message { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
@@ -1121,7 +1121,7 @@ export default function AdminPage() {
           padding: 4px 8px; border-radius: 8px;
           transition: all 0.2s;
         }
-        .live-tv-manage-btn:active { background: rgba(112,72,232,0.1); }
+        .live-tv-manage-btn:active { background: rgba(217,119,6,0.1); }
         .live-tv-embed-wrap {
           position: relative;
           width: 100%;
@@ -1141,23 +1141,23 @@ export default function AdminPage() {
                 /* ===== PREMIUM RADIO CARD (compact) ===== */
         .rh-hero {
             position: relative;
-            background: linear-gradient(180deg, rgba(112,72,232,0.06) 0%, rgba(15,15,15,0.5) 100%);
-            border: 1px solid rgba(112,72,232,0.12);
+            background: linear-gradient(180deg, rgba(217,119,6,0.06) 0%, rgba(15,15,15,0.5) 100%);
+            border: 1px solid rgba(217,119,6,0.12);
             border-radius: var(--radius-xl);
             padding: 14px 16px 12px;
             overflow: hidden;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 80px rgba(112,72,232,0.04);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 80px rgba(217,119,6,0.04);
         }
         .rh-glow-1 {
             position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
             width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(112,72,232,0.12) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(217,119,6,0.12) 0%, transparent 70%);
             pointer-events: none;
         }
         .rh-glow-2 {
             position: absolute; bottom: -60px; right: -60px;
             width: 200px; height: 200px;
-            background: radial-gradient(circle, rgba(112,72,232,0.06) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(217,119,6,0.06) 0%, transparent 70%);
             pointer-events: none;
         }
         .rh-top {
@@ -1202,12 +1202,12 @@ export default function AdminPage() {
         .rh-art-ring {
             position: absolute; inset: -3px;
             border-radius: 50%;
-            border: 1.5px solid rgba(112,72,232,0.2);
+            border: 1.5px solid rgba(217,119,6,0.2);
         }
         .rh-art {
             width: 100%; height: 100%;
             border-radius: 50%; overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 1.5px rgba(112,72,232,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 1.5px rgba(217,119,6,0.1);
             position: relative;
         }
         .rh-art.spinning {
@@ -1264,16 +1264,16 @@ export default function AdminPage() {
             border: none; color: #fff; font-size: 14px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; position: relative; flex-shrink: 0;
-            box-shadow: 0 4px 16px rgba(112,72,232,0.3);
+            box-shadow: 0 4px 16px rgba(217,119,6,0.3);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .rh-play-btn:active { transform: scale(0.88); }
         .rh-play-btn.playing {
-            box-shadow: 0 4px 20px rgba(112,72,232,0.35);
+            box-shadow: 0 4px 20px rgba(217,119,6,0.35);
         }
         .rh-play-ring {
             position: absolute; inset: -4px; border-radius: 50%;
-            border: 1.5px solid rgba(112,72,232,0.15);
+            border: 1.5px solid rgba(217,119,6,0.15);
         }
         .rh-play-btn.playing .rh-play-ring {
             border-color: rgba(74,222,128,0.3);
@@ -1321,13 +1321,13 @@ export default function AdminPage() {
             transition: all 0.15s ease;
         }
         .section-link i { font-size: 10px; }
-        .section-link:active { background: rgba(112,72,232,0.1); }
+        .section-link:active { background: rgba(217,119,6,0.1); }
       `}</style>
 
       {updateNotif && (
         <div style={{
-          padding: "10px 16px", background: "linear-gradient(135deg, rgba(112,72,232,0.12), rgba(112,72,232,0.04))",
-          borderBottom: "1px solid rgba(112,72,232,0.15)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+          padding: "10px 16px", background: "linear-gradient(135deg, rgba(217,119,6,0.12), rgba(217,119,6,0.04))",
+          borderBottom: "1px solid rgba(217,119,6,0.15)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--primary)" }}>📲 App Update Available</div>

@@ -94,16 +94,16 @@ export default function RadioStationPage() {
       {/* ========== GLOBAL STYLES ========== */}
       <style>{`
         :root {
-          --rs-primary: #9775FA; --rs-primary-light: #B197FC; --rs-primary-dark: #7048E8;
-          --rs-bg: #15111F; --rs-surface: #1A1625; --rs-surface-elevated: #241E33;
-          --rs-surface-card: #1E1A2A; --rs-surface-hover: #2A2438;
+          --rs-primary: #D97706; --rs-primary-light: #F59E0B; --rs-primary-dark: #B45309;
+          --rs-bg: #161213; --rs-surface: #1E1819; --rs-surface-elevated: #2A1E1F;
+          --rs-surface-card: #221819; --rs-surface-hover: #2A1E1F;
           --rs-text: #FFFFFF; --rs-text-secondary: #A0A0A0; --rs-text-tertiary: #6B6B6B;
-          --rs-border: #2A2438;
+          --rs-border: #3A2425;
           --rs-error: #FF6B6B; --rs-success: #4ADE80; --rs-info: #38BDF8; --rs-warning: #FBBF24;
-          --rs-overlay: rgba(21,17,31,0.92);
-          --rs-grad-start: #7048E8; --rs-grad-end: #9775FA;
-          --rs-grad-purple: #8B5CF6; --rs-grad-blue: #3B82F6; --rs-grad-red: #EF4444; --rs-grad-green: #22C55E;
-          --rs-shadow-soft: 0 4px 20px rgba(112,72,232,0.15);
+          --rs-overlay: rgba(22,18,19,0.92);
+          --rs-grad-start: #D97706; --rs-grad-end: #F59E0B;
+          --rs-grad-purple: #D97706; --rs-grad-blue: #3B82F6; --rs-grad-red: #EF4444; --rs-grad-green: #22C55E;
+          --rs-shadow-soft: 0 4px 20px rgba(217,119,6,0.15);
           --rs-shadow-elevated: 0 8px 32px rgba(0,0,0,0.5);
           --rs-radius-sm: 10px; --rs-radius-md: 14px; --rs-radius-lg: 18px; --rs-radius-xl: 22px; --rs-radius-full: 50%;
           --rs-sidebar-width: 200px;
@@ -162,7 +162,7 @@ export default function RadioStationPage() {
 
         .rs-dj-name {
           font-size: 12px; color: var(--rs-primary); font-weight: 600;
-          padding: 4px 10px; background: rgba(112,72,232,0.1); border-radius: 20px;
+          padding: 4px 10px; background: rgba(217,119,6,0.1); border-radius: 20px;
         }
 
         .rs-header-play-btn {
@@ -177,7 +177,7 @@ export default function RadioStationPage() {
 
         @keyframes rsGlow {
           0%, 100% { box-shadow: var(--rs-shadow-soft); }
-          50% { box-shadow: 0 0 20px rgba(112,72,232,0.3); }
+          50% { box-shadow: 0 0 20px rgba(217,119,6,0.3); }
         }
 
         /* ========== NOW PLAYING BAR ========== */
@@ -227,7 +227,7 @@ export default function RadioStationPage() {
         .rs-sidebar-btn:active { background: var(--rs-surface-elevated); }
         .rs-sidebar-btn.active {
           color: var(--rs-primary);
-          background: linear-gradient(90deg, rgba(112,72,232,0.08), transparent);
+          background: linear-gradient(90deg, rgba(217,119,6,0.08), transparent);
         }
         .rs-sidebar-btn.active::before {
           content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px;
@@ -274,7 +274,7 @@ export default function RadioStationPage() {
         }
         .rs-toast-icon.success { background: rgba(74,222,128,0.15); color: var(--rs-success); }
         .rs-toast-icon.error { background: rgba(255,107,107,0.15); color: var(--rs-error); }
-        .rs-toast-icon.info { background: rgba(112,72,232,0.15); color: var(--rs-primary); }
+        .rs-toast-icon.info { background: rgba(217,119,6,0.15); color: var(--rs-primary); }
         .rs-toast-content { flex: 1; }
         .rs-toast-title { font-size: 14px; font-weight: 600; }
         .rs-toast-msg { font-size: 13px; color: var(--rs-text-secondary); margin-top: 2px; }
@@ -363,7 +363,7 @@ export default function RadioStationPage() {
         }
         .rs-badge.green { background: rgba(34,197,94,0.12); color: var(--rs-success); }
         .rs-badge.red { background: rgba(239,68,68,0.12); color: var(--rs-error); }
-        .rs-badge.gold { background: rgba(112,72,232,0.12); color: var(--rs-primary); }
+        .rs-badge.gold { background: rgba(217,119,6,0.12); color: var(--rs-primary); }
         .rs-badge.blue { background: rgba(59,130,246,0.12); color: var(--rs-grad-blue); }
         .rs-badge.purple { background: rgba(139,92,246,0.12); color: var(--rs-grad-purple); }
         .rs-badge.gray { background: var(--rs-surface-elevated); color: var(--rs-text-tertiary); }
@@ -400,7 +400,7 @@ export default function RadioStationPage() {
           font-size: 14px; font-weight: 500; outline: none;
           transition: all 0.2s ease;
         }
-        .rs-input:focus { border-color: var(--rs-primary); box-shadow: 0 0 0 4px rgba(112,72,232,0.08); }
+        .rs-input:focus { border-color: var(--rs-primary); box-shadow: 0 0 0 4px rgba(217,119,6,0.08); }
         .rs-input::placeholder { color: var(--rs-text-tertiary); font-weight: 400; }
 
         .rs-select {

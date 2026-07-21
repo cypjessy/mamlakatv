@@ -18,7 +18,7 @@ export default function PremiumLoader() {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          border: 3px solid rgba(112,72,232,0.08);
+          border: 3px solid rgba(217,119,6,0.08);
           border-top-color: var(--primary);
           border-right-color: var(--primary-dark);
           animation: pl-spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -31,7 +31,7 @@ export default function PremiumLoader() {
           width: 48px;
           height: 48px;
           border-radius: 50%;
-          border: 2px solid rgba(112,72,232,0.06);
+          border: 2px solid rgba(217,119,6,0.06);
           border-bottom-color: var(--primary);
           border-left-color: var(--primary-dark);
           animation: pl-spin 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;

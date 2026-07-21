@@ -40,9 +40,9 @@ export default function LoginPage() {
     <>
       <style>{`
         :root {
-            --primary: #E03131;
-            --primary-light: #F03E3E;
-            --primary-dark: #C92A2A;
+            --primary: #D97706;
+            --primary-light: #F59E0B;
+            --primary-dark: #B45309;
             --bg: #161213;
             --surface: #1E1819;
             --surface-elevated: #2A1E1F;
@@ -54,9 +54,9 @@ export default function LoginPage() {
             --error: #FF6B6B;
             --success: #4ADE80;
             --overlay: rgba(22,18,19,0.92);
-            --gradient-start: #E03131;
-            --gradient-end: #F03E3E;
-            --shadow-soft: 0 4px 20px rgba(224,49,49,0.15);
+            --gradient-start: #D97706;
+            --gradient-end: #F59E0B;
+            --shadow-soft: 0 4px 20px rgba(217,119,6,0.15);
             --shadow-elevated: 0 8px 32px rgba(0,0,0,0.45);
         }
 
@@ -181,7 +181,7 @@ export default function LoginPage() {
             transform: translateX(-50%);
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(224,49,49,0.12) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(217,119,6,0.12) 0%, transparent 70%);
             pointer-events: none;
         }
 
@@ -248,7 +248,7 @@ export default function LoginPage() {
         .input-wrapper:focus-within {
             border-color: var(--primary);
             background: var(--surface-elevated);
-            box-shadow: 0 0 0 4px rgba(112,72,232,0.08);
+            box-shadow: 0 0 0 4px rgba(217,119,6,0.08);
         }
 
         .input-wrapper.error {

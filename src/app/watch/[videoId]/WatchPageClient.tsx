@@ -489,10 +489,10 @@ export default function WatchPageClient() {
           transition: all 0.15s ease;
         }
         .wn-preview-btn:active { transform: scale(0.92); }
-        .wn-preview-btn.active { background: rgba(112,72,232,0.1); border-color: rgba(112,72,232,0.2); color: var(--primary); }
+        .wn-preview-btn.active { background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.2); color: var(--primary); }
         .wn-save-btn {
           padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
-          background: linear-gradient(135deg, var(--primary), #7048E8);
+          background: linear-gradient(135deg, var(--primary), #D97706);
           border: none; color: #fff; cursor: pointer;
           display: flex; align-items: center; gap: 5px;
           transition: all 0.15s ease;
@@ -526,7 +526,7 @@ export default function WatchPageClient() {
           resize: vertical; outline: none; transition: all 0.2s;
           min-height: 160px;
         }
-        .wn-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(112,72,232,0.08); }
+        .wn-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
         .wn-textarea::placeholder { color: #6B6B6B; }
 
         .wn-preview {
@@ -594,7 +594,7 @@ export default function WatchPageClient() {
           border-radius: 10px; color: #fff; font-size: 14px;
           outline: none; transition: all 0.2s;
         }
-        .wn-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(112,72,232,0.08); }
+        .wn-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
         .wn-search-input::placeholder { color: #6B6B6B; }
         .wn-search-clear {
           position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -619,7 +619,7 @@ export default function WatchPageClient() {
           cursor: pointer;
         }
         .wn-list-item:active { transform: scale(0.97); background: #202020; }
-        .wn-list-item.active { border-color: rgba(112,72,232,0.2); background: rgba(112,72,232,0.04); }
+        .wn-list-item.active { border-color: rgba(217,119,6,0.2); background: rgba(217,119,6,0.04); }
         .wn-list-item-top {
           display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
         }
@@ -645,7 +645,7 @@ export default function WatchPageClient() {
         .wn-list-current-badge { font-size: 10px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; }
         .wn-list-open-btn {
           padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
-          background: rgba(112,72,232,0.08); border: 1px solid rgba(112,72,232,0.12);
+          background: rgba(217,119,6,0.08); border: 1px solid rgba(217,119,6,0.12);
           color: var(--primary); cursor: pointer;
           display: flex; align-items: center; gap: 4px;
           transition: all 0.15s;
@@ -680,7 +680,7 @@ export default function WatchPageClient() {
         }
         .wn-reader-edit-btn {
           padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
-          background: rgba(112,72,232,0.08); border: 1px solid rgba(112,72,232,0.12);
+          background: rgba(217,119,6,0.08); border: 1px solid rgba(217,119,6,0.12);
           color: var(--primary); cursor: pointer;
           display: flex; align-items: center; gap: 4px;
           transition: all 0.15s;

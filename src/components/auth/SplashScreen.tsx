@@ -62,8 +62,8 @@ export default function SplashScreen() {
       {/* Bottom decorative element */}
       <div className="splash-bottom">
         <svg viewBox="0 0 480 80" preserveAspectRatio="none" className="splash-wave">
-          <path d="M0,40 C80,20 160,60 240,40 C320,20 400,60 480,40 L480,80 L0,80 Z" fill="rgba(224,49,49,0.04)" />
-          <path d="M0,55 C120,35 200,75 320,55 C400,40 450,65 480,55 L480,80 L0,80 Z" fill="rgba(224,49,49,0.025)" />
+          <path d="M0,40 C80,20 160,60 240,40 C320,20 400,60 480,40 L480,80 L0,80 Z" fill="rgba(217,119,6,0.04)" />
+          <path d="M0,55 C120,35 200,75 320,55 C400,40 450,65 480,55 L480,80 L0,80 Z" fill="rgba(217,119,6,0.025)" />
         </svg>
       </div>
 
@@ -101,7 +101,7 @@ export default function SplashScreen() {
         .splash-bg-orb-1 {
           width: 300px;
           height: 300px;
-          background: rgba(224,49,49,0.15);
+          background: rgba(217,119,6,0.15);
           top: -80px;
           right: -60px;
           animation-delay: 0s;
@@ -117,7 +117,7 @@ export default function SplashScreen() {
         .splash-bg-orb-3 {
           width: 200px;
           height: 200px;
-          background: rgba(224,49,49,0.08);
+          background: rgba(217,119,6,0.08);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -177,10 +177,10 @@ export default function SplashScreen() {
         .splash-ring-outer {
           width: 100px;
           height: 100px;
-          border-top-color: rgba(224,49,49,0.3);
-          border-right-color: rgba(224,49,49,0.1);
+          border-top-color: rgba(217,119,6,0.3);
+          border-right-color: rgba(217,119,6,0.1);
           border-bottom-color: transparent;
-          border-left-color: rgba(224,49,49,0.15);
+          border-left-color: rgba(217,119,6,0.15);
           animation: splashRingSpin 3s linear infinite;
         }
         .splash-ring-inner {
@@ -224,7 +224,7 @@ export default function SplashScreen() {
           font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.5px;
-          background: linear-gradient(135deg, #FF922B 0%, #F76707 50%, #E03131 100%);
+          background: linear-gradient(135deg, #FF922B 0%, #F76707 50%, #D97706 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -268,7 +268,7 @@ export default function SplashScreen() {
         .splash-progress-bar {
           height: 100%;
           width: 40%;
-          background: linear-gradient(90deg, #E03131, #FF922B);
+          background: linear-gradient(90deg, #D97706, #FF922B);
           border-radius: 2px;
           animation: splashProgressAnim 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
         }

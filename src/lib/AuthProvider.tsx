@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             width: 48,
             height: 48,
             border: "3px solid #2A2438",
-            borderTopColor: "#9775FA",
+            borderTopColor: "#F59E0B",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
           }}

@@ -388,7 +388,7 @@ export default function AdminMeetingsPage() {
   return (
     <>
       <style>{`
-        :root { --primary: #9775FA; --primary-light: #B197FC; --primary-dark: #7048E8; --bg: #15111F; --surface: #1A1625; --surface-elevated: #241E33; --surface-card: #1E1A2A; --surface-hover: #2A2438; --text-primary: #FFFFFF; --text-secondary: #A0A0A0; --text-tertiary: #6B6B6B; --border: #2A2438; --error: #FF6B6B; --success: #4ADE80; --info: #38BDF8; --warning: #FBBF24; --overlay: rgba(21,17,31,0.92); --gradient-start: #7048E8; --gradient-end: #9775FA; --gradient-purple: #8B5CF6; --gradient-blue: #3B82F6; --gradient-green: #22C55E; --gradient-red: #EF4444; --shadow-soft: 0 4px 20px rgba(112,72,232,0.15); --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5); --radius-sm: 10px; --radius-md: 14px; --radius-lg: 18px; --radius-xl: 22px; --radius-full: 50%; }
+        :root { --primary: #D97706; --primary-light: #F59E0B; --primary-dark: #B45309; --bg: #161213; --surface: #1E1819; --surface-elevated: #2A1E1F; --surface-card: #221819; --surface-hover: #2A1E1F; --text-primary: #FFFFFF; --text-secondary: #A0A0A0; --text-tertiary: #6B6B6B; --border: #3A2425; --error: #FF6B6B; --success: #4ADE80; --info: #38BDF8; --warning: #F59E0B; --overlay: rgba(22,18,19,0.92); --gradient-start: #D97706; --gradient-end: #F59E0B; --gradient-purple: #D97706; --gradient-blue: #3B82F6; --gradient-green: #22C55E; --gradient-red: #EF4444; --shadow-soft: 0 4px 20px rgba(217,119,6,0.15); --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5); --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px; --radius-xl: 24px; --radius-full: 50%; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
         html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text-primary); }
         .app-container { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
@@ -900,7 +900,7 @@ export default function AdminMeetingsPage() {
                                           padding: "1px 6px", borderRadius: 4, fontSize: 10,
                                           fontWeight: 700,
                                           background: item.priority === "high" ? "rgba(255,107,107,0.12)"
-                                            : item.priority === "medium" ? "rgba(112,72,232,0.12)"
+                                            : item.priority === "medium" ? "rgba(217,119,6,0.12)"
                                             : "rgba(107,107,107,0.12)",
                                           color: item.priority === "high" ? "var(--error)"
                                             : item.priority === "medium" ? "var(--primary)"

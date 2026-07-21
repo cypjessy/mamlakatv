@@ -132,8 +132,8 @@ export default function UpdateChecker() {
           width: 80px;
           height: 80px;
           border-radius: 24px;
-          background: linear-gradient(135deg, rgba(112,72,232,0.12), rgba(112,72,232,0.04));
-          border: 1px solid rgba(112,72,232,0.15);
+          background: linear-gradient(135deg, rgba(217,119,6,0.12), rgba(217,119,6,0.04));
+          border: 1px solid rgba(217,119,6,0.15);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -162,8 +162,8 @@ export default function UpdateChecker() {
           gap: 6px;
           padding: 6px 14px;
           border-radius: 20px;
-          background: rgba(112,72,232,0.1);
-          border: 1px solid rgba(112,72,232,0.15);
+          background: rgba(217,119,6,0.1);
+          border: 1px solid rgba(217,119,6,0.15);
           font-size: 13px;
           font-weight: 700;
           color: var(--primary);
