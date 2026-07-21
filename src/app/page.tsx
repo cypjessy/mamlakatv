@@ -9,7 +9,7 @@ import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import PhoneLoginModal from "@/components/auth/PhoneLoginModal";
 import CountryPickerModal from "@/components/auth/CountryPickerModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import TempAdminModal from "@/components/auth/TempAdminModal";
+
 import PremiumTopBar from "@/components/shared/PremiumTopBar";
 
 
@@ -622,7 +622,6 @@ export default function LoginPage() {
         </div>
 
         <RegisterModal />
-        <TempAdminModal />
         <ForgotPasswordModal />
         <PhoneLoginModal />
         <CountryPickerModal />

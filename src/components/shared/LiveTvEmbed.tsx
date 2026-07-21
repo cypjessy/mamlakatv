@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useFullscreenToggle } from "@/lib/tv/fullscreen";
 
 /**
  * Live TV embed that:
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export default function LiveTvEmbed({ navTo }: Props) {
+  useFullscreenToggle();
   const router = useRouter();
   const isNative = isCapacitorNative();
   const vercelBase = getVercelBase();

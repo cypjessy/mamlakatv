@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useFullscreenToggle } from "@/lib/tv/fullscreen";
 import "plyr/dist/plyr.css";
 
 /**
@@ -25,6 +26,8 @@ export default function PlyrPlayer({
   /** Called periodically during playback with the current time (seconds). */
   onTimeUpdate?: (time: number) => void;
 }) {
+  useFullscreenToggle();
+
   const containerRef = useRef<HTMLDivElement | HTMLVideoElement>(null);
   const plyrRef = useRef<any>(null);
   const onEndedRef = useRef(onEnded);

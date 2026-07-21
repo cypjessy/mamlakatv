@@ -763,7 +763,7 @@ export default function DashboardPage() {
         </div>          </section>
 
           {/* UPCOMING EVENTS */}
-          <EventCarousel redirectUrl="/gallery" />
+          <EventCarousel />
 
           {/* PHOTO CAROUSEL */}
           <section className="feed-section">

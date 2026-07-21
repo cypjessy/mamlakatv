@@ -64,7 +64,7 @@ export default function BottomNav({ activeTab: propActiveTab }: BottomNavProps) 
       >
         <i className="fas fa-tv"></i>
         {liveTvActive && <span className="nav-live-dot"></span>}
-        <span>TV</span>
+        <span>Sermons</span>
       </button>
       <button
         className={`nav-item${activeTab === "radio" ? " active" : ""}`}

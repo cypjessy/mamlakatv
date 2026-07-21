@@ -6,8 +6,8 @@ import { useCallback, useState, useEffect } from "react";
  * Shared hook to toggle video fullscreen + landscape orientation on mobile.
  *
  * On Android: the manifest locks the app to portrait by default.
- * When the user clicks expand:
- *   1. Capacitor ScreenOrientation unlocks to landscape
+ * When the user clicks expand (via toggleFullscreen or YouTube's native button):
+ *   1. Capacitor ScreenOrientation locks to landscape
  *   2. HTML5 Fullscreen API engages
  * When the user exits (expand again, Escape, back):
  *   1. HTML5 Fullscreen exits
@@ -16,13 +16,15 @@ import { useCallback, useState, useEffect } from "react";
 export function useFullscreenToggle() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Listen for fullscreenchange — detects Escape / back-button exits
+  // Listen for fullscreenchange — detects all entries/exits (our toggle, YouTube's
+  // native button, Escape, back-button, etc.)
   useEffect(() => {
     const handler = () => {
       const fs = !!document.fullscreenElement;
       setIsFullscreen(fs);
-      if (!fs) {
-        // User exited fullscreen externally — re-lock to portrait
+      if (fs) {
+        lockLandscape();
+      } else {
         reLockPortrait();
       }
     };
@@ -70,6 +72,16 @@ export function useFullscreenToggle() {
   }, []);
 
   return { isFullscreen, toggleFullscreen };
+}
+
+/** Helper: silently lock to landscape (used by the fullscreenchange listener). */
+async function lockLandscape() {
+  try {
+    const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+    await ScreenOrientation.lock({ orientation: "landscape" });
+  } catch {
+    /* not running in Capacitor */
+  }
 }
 
 /** Helper: silently re-lock to portrait (used by the fullscreenchange listener). */

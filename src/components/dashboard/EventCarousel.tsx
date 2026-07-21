@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { getEvents } from "@/lib/churchAiData";
 import type { EventItem } from "@/lib/churchAdminData";
 
 /**
  * Auto-advancing event carousel that fetches real events from Firestore.
- * Premium redesign with larger cards, glass-morphism effects, and rich imagery.
- * @param redirectUrl - Where to navigate when a card is clicked (default: "/gallery")
+ * Clicking a card opens a full-screen image preview so the user can read
+ * the event image content.
  */
-export default function EventCarousel({ redirectUrl = "/gallery" }: { redirectUrl?: string }) {
-  const router = useRouter();
+export default function EventCarousel() {
+  const [previewEvent, setPreviewEvent] = useState<EventItem | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -130,7 +129,7 @@ export default function EventCarousel({ redirectUrl = "/gallery" }: { redirectUr
               <div
                 key={`${ev.id}-${i >= events.length ? 'dup' : 'orig'}`}
                 className={`ec-card ${i === currentIndex ? "active" : ""} ${hasImage ? "has-img" : ""}`}
-                onClick={() => router.push(redirectUrl)}
+                onClick={() => hasImage && setPreviewEvent(ev)}
               >
                 {/* Glass top accent line */}
                 <div className="ec-accent"></div>
@@ -183,6 +182,26 @@ export default function EventCarousel({ redirectUrl = "/gallery" }: { redirectUr
           })}
         </div>
       </div>
+
+      {/* ── Full-screen image preview ── */}
+      {previewEvent && (
+        <div className="ec-preview-overlay" onClick={() => setPreviewEvent(null)}>
+          <button className="ec-preview-close" onClick={(e) => { e.stopPropagation(); setPreviewEvent(null); }}>
+            <i className="fas fa-times"></i>
+          </button>
+          <div className="ec-preview-card" onClick={(e) => e.stopPropagation()}>
+            <img src={previewEvent.imageUrl} alt={previewEvent.name} className="ec-preview-img" />
+            <div className="ec-preview-info">
+              <h3 className="ec-preview-name">{previewEvent.name}</h3>
+              <div className="ec-preview-meta">
+                <span><i className="fas fa-clock"></i> {(() => { const d = formatEventDate(previewEvent.date); return `${d.day} ${d.month} · ${d.time}`; })()}</span>
+                {previewEvent.location && <span><i className="fas fa-location-dot"></i> {previewEvent.location}</span>}
+              </div>
+              {previewEvent.desc && <div className="ec-preview-desc">{previewEvent.desc}</div>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Dots */}
       {events.length > 1 && (
@@ -393,6 +412,59 @@ export default function EventCarousel({ redirectUrl = "/gallery" }: { redirectUr
           box-shadow: 0 0 8px rgba(217,119,6,0.3);
         }
         .ec-dot:active { transform: scale(0.8); }
+
+        /* ── Full-screen image preview ── */
+        .ec-preview-overlay {
+          position: fixed; inset: 0; z-index: 20000;
+          background: rgba(0,0,0,0.92);
+          display: flex; align-items: center; justify-content: center;
+          animation: ecFadeIn 0.2s ease;
+          padding: 16px;
+        }
+        @keyframes ecFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .ec-preview-close {
+          position: fixed; top: 16px; right: 16px;
+          width: 40px; height: 40px; border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          border: none; color: #fff; font-size: 18px;
+          cursor: pointer; z-index: 20001;
+          display: flex; align-items: center; justify-content: center;
+          transition: all 0.2s;
+        }
+        .ec-preview-close:active { transform: scale(0.85); background: rgba(255,255,255,0.2); }
+        .ec-preview-card {
+          max-width: 100%;
+          max-height: 100%;
+          display: flex; flex-direction: column;
+          border-radius: 16px; overflow: hidden;
+          background: var(--surface);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .ec-preview-img {
+          display: block;
+          max-width: 100vw;
+          max-height: 80vh;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+        }
+        .ec-preview-info {
+          padding: 16px 20px;
+          background: var(--surface);
+        }
+        .ec-preview-name {
+          font-size: 18px; font-weight: 700;
+          margin-bottom: 8px;
+        }
+        .ec-preview-meta {
+          display: flex; flex-wrap: wrap; gap: 12px;
+          font-size: 13px; color: var(--text-secondary);
+        }
+        .ec-preview-meta i { font-size: 11px; margin-right: 4px; color: var(--primary); }
+        .ec-preview-desc {
+          font-size: 13px; color: var(--text-tertiary);
+          margin-top: 8px; line-height: 1.5;
+        }
       `}</style>
     </section>
   );

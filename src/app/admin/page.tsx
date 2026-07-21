@@ -1540,7 +1540,7 @@ export default function AdminPage() {
           </section>
 
           {/* UPCOMING EVENTS */}
-          <EventCarousel redirectUrl="/admin/content" />
+          <EventCarousel />
 
           {/* PHOTO CAROUSEL */}
           <section className="feed-section">
