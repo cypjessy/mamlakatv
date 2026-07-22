@@ -1,4 +1,4 @@
-package com.oracletvmedia.app;
+package com.mlmanitv.app;
 
 import android.app.PictureInPictureParams;
 import android.content.pm.PackageManager;

@@ -9,13 +9,13 @@ import UpdateChecker from "@/components/shared/UpdateChecker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ORACLE TV MEDIA",
+  title: "MAMLAKA TV MEDIA",
   description:
-    "ORACLE TV MEDIA connects you to live radio, sermons, videos, and community — anywhere, anytime.",
+    "MAMLAKA TV MEDIA connects you to live radio, sermons, videos, and community — anywhere, anytime.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ORACLE TV MEDIA",
+    title: "MAMLAKA TV MEDIA",
   },
   icons: {
     icon: "/favicon.ico",

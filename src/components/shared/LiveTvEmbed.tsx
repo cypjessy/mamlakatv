@@ -1,105 +1,219 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFullscreenToggle } from "@/lib/tv/fullscreen";
+import { getVideos } from "@/lib/youtube";
+import type { YouTubeVideo } from "@/lib/youtube";
 
 /**
- * Live TV embed that:
- *  - On web (Vercel, HTTPS): embeds Odysee directly.
- *  - On Capacitor native (APK, file://): loads the Vercel-hosted
- *    /live-tv-embed page in an iframe, so the Odysee iframe's
- *    parent is HTTPS, not file://.
- *
- * The admin/member nav button pushes to the TV management page
- * (/admin/tv or /tv) as before.
+ * TV embed that auto-plays the latest YouTube video from the Firestore database.
+ * - Fetches the most recently published non-hidden video from youtube_videos
+ * - Shows it as an embedded YouTube player with autoplay
+ * - "View All" button navigates to the TV page (navTo prop)
  */
 
-function isCapacitorNative(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    typeof (window as any).Capacitor?.isNativePlatform === "function" &&
-    (window as any).Capacitor.isNativePlatform()
-  );
-}
-
-function getVercelBase(): string {
-  if (typeof window === "undefined") return "";
-  // NEXT_PUBLIC_VERCEL_URL is baked into the JS bundle at build time — works on APK too
-  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || "";
-  if (vercelUrl) return vercelUrl.replace(/\/+$/, "");
-  // Fall back to window.location.origin for local dev / preview deployments
-  // On Capacitor APK this will be file:// which we can't use for iframes
-  if (window.location.origin.startsWith("file://")) return "";
-  return window.location.origin.replace(/\/+$/, "");
-}
-
-const ODYSEE_SRC = "https://odysee.com/$/embed/@otvlive:a/gib254:2?autoplay=true";
-
 interface Props {
-  /** Where the "Watch" button navigates to */
+  /** Where the "View All" button navigates to */
   navTo: string;
 }
 
 export default function LiveTvEmbed({ navTo }: Props) {
-  useFullscreenToggle();
   const router = useRouter();
-  const isNative = isCapacitorNative();
-  const vercelBase = getVercelBase();
+  const [video, setVideo] = useState<YouTubeVideo | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (isNative && !vercelBase) {
-    // Capacitor native but Vercel URL not configured — show fallback
+  // ─── Fetch latest video from Firestore ───
+  useEffect(() => {
+    let mounted = true;
+    const fetchLatest = async () => {
+      try {
+        const allVids = await getVideos({ max: 10, includeHidden: false });
+        if (!mounted) return;
+        // Sort by publishedAt descending, take the latest
+        const sorted = [...allVids].sort((a, b) => {
+          const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+          const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+        setVideo(sorted[0] || null);
+      } catch {
+        // silent
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchLatest();
+    return () => { mounted = false; };
+  }, []);
+
+  // ─── Loading state ───
+  if (loading) {
     return (
       <div className="live-tv-embed-section">
-        <LiveTvHeader navTo={navTo} router={router} />
-        <div className="live-tv-embed-fallback">
-          <i className="fas fa-tv" style={{ fontSize: 32, opacity: 0.3 }} />
-          <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-            Live TV is available on the web version
-          </span>
+        <div className="live-tv-header">
+          <div className="live-tv-header-left">
+            <i className="fas fa-tv" />
+            <span>Latest Sermon</span>
+          </div>
+        </div>
+        <div className="live-tv-embed-wrap" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, background: "var(--surface-card, #221819)" }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 24, color: "var(--primary, #D97706)" }} />
         </div>
       </div>
     );
   }
 
-  // APK: Load the Vercel-hosted embed page in an iframe
-  // Web: Embed Odysee directly
-  const iframeSrc = isNative ? `${vercelBase}/live-tv-embed` : ODYSEE_SRC;
+  // ─── Empty state ───
+  if (!video) {
+    return (
+      <div className="live-tv-embed-section">
+        <div className="live-tv-header">
+          <div className="live-tv-header-left">
+            <i className="fas fa-tv" />
+            <span>Latest Sermon</span>
+          </div>
+        </div>
+        <div className="live-tv-embed-wrap" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 140, background: "var(--surface-card, #221819)", color: "var(--text-tertiary, #6B6B6B)" }}>
+          <i className="fas fa-video-slash" style={{ fontSize: 32, opacity: 0.4 }} />
+          <span style={{ fontSize: 14 }}>No videos available yet</span>
+        </div>
+      </div>
+    );
+  }
 
+  // ─── Player ───
   return (
     <div className="live-tv-embed-section">
-      <LiveTvHeader navTo={navTo} router={router} />
-      <div className="live-tv-embed-wrap">
-        <iframe
-          src={iframeSrc}
-          className="live-tv-iframe"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          title="Live TV"
-        />
+      {/* Header */}
+      <div className="live-tv-header">
+        <div className="live-tv-header-left">
+          <i className="fas fa-tv" />
+          <span>Latest Sermon</span>
+        </div>
+        <button className="live-tv-manage-btn" onClick={() => router.push(navTo)}>
+          View All <i className="fas fa-chevron-right" />
+        </button>
       </div>
-    </div>
-  );
-}
 
-function LiveTvHeader({
-  navTo,
-  router,
-}: {
-  navTo: string;
-  router: ReturnType<typeof useRouter>;
-}) {
-  return (
-    <div className="live-tv-header">
-      <div className="live-tv-header-left">
-        <i className="fas fa-tv" />
-        <span>Live TV</span>
+      {/* YouTube player */}
+      <div className="live-tv-embed-wrap">
+        <div className="live-tv-player-wrap">
+          <iframe
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1`}
+            className="live-tv-iframe"
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            title={video.title}
+          />
+        </div>
+        {/* Video title bar */}
+        <div className="live-tv-video-info">
+          <div className="live-tv-video-title">{video.title}</div>
+          <div className="live-tv-video-meta">
+            {video.duration > 0 && (
+              <span>{Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, "0")}</span>
+            )}
+          </div>
+        </div>
       </div>
-      <button
-        className="live-tv-manage-btn"
-        onClick={() => router.push(navTo)}
-      >
-        Watch <i className="fas fa-chevron-right" />
-      </button>
+
+      {/* ─── Inline styles ─── */}
+      <style>{`
+        .live-tv-embed-section {
+          padding: 0;
+        }
+        .live-tv-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+          padding: 0 16px;
+        }
+        .live-tv-header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 17px;
+          font-weight: 700;
+        }
+        .live-tv-header-left i {
+          font-size: 15px;
+          color: var(--primary, #D97706);
+        }
+        .live-tv-manage-btn {
+          font-size: 12px;
+          color: var(--primary, #D97706);
+          font-weight: 600;
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .live-tv-manage-btn i {
+          font-size: 10px;
+        }
+        .live-tv-manage-btn:active {
+          opacity: 0.7;
+        }
+
+        .live-tv-embed-wrap {
+          overflow: hidden;
+          background: var(--surface-card, #221819);
+        }
+        .live-tv-player-wrap {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          background: #000;
+        }
+        .live-tv-iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .live-tv-video-info {
+          padding: 12px 16px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .live-tv-video-title {
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 1.35;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          color: var(--text-primary, #FFFFFF);
+        }
+        .live-tv-video-meta {
+          font-size: 12px;
+          color: var(--text-tertiary, #6B6B6B);
+          font-variant-numeric: tabular-nums;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 768px) {
+          .live-tv-video-title {
+            font-size: 15px;
+          }
+          .live-tv-video-info {
+            padding: 14px 24px 16px;
+          }
+          .live-tv-header {
+            padding: 0 24px;
+          }
+        }
+      `}</style>
     </div>
   );
 }

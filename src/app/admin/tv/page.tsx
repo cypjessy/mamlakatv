@@ -1451,7 +1451,7 @@ export default function AdminTVPage() {
             <div className="live-giving-form">
               <div className="form-group">
                 <label className="form-label"><i className="fas fa-church"></i> Church Name</label>
-                <input className="form-input" type="text" value={gcChurchName} onChange={(e) => setGcChurchName(e.target.value)} placeholder="e.g. ORACLE TV MEDIA" />
+                <input className="form-input" type="text" value={gcChurchName} onChange={(e) => setGcChurchName(e.target.value)} placeholder="e.g. MAMLAKA TV MEDIA" />
               </div>
               <div className="form-group">
                 <label className="form-label"><i className="fas fa-align-left"></i> Description</label>

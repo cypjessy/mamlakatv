@@ -7,7 +7,7 @@ interface ShareAppQrModalProps {
   onClose: () => void;
 }
 
-const APP_DOWNLOAD_URL = "https://oracletvmedia.vercel.app/oracle-tv-app.apk";
+const APP_DOWNLOAD_URL = "https://oracletvmedia.vercel.app/mamlaka-tv-app.apk";
 
 export default function ShareAppQrModal({ open, onClose }: ShareAppQrModalProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
@@ -45,16 +45,16 @@ export default function ShareAppQrModal({ open, onClose }: ShareAppQrModalProps)
     try {
       const { Share } = await import("@capacitor/share");
       await Share.share({
-        title: "ORACLE TV MEDIA App",
-        text: "Download the ORACLE TV MEDIA church app",
+        title: "MAMLAKA TV MEDIA App",
+        text: "Download the MAMLAKA TV MEDIA church app",
         url: APP_DOWNLOAD_URL,
       });
     } catch {
       // Fallback to native share if available
       if (navigator.share) {
         await navigator.share({
-          title: "ORACLE TV MEDIA App",
-          text: "Download the ORACLE TV MEDIA church app",
+          title: "MAMLAKA TV MEDIA App",
+          text: "Download the MAMLAKA TV MEDIA church app",
           url: APP_DOWNLOAD_URL,
         });
       } else {
@@ -192,7 +192,7 @@ export default function ShareAppQrModal({ open, onClose }: ShareAppQrModalProps)
             Share App
           </div>
           <div className="qr-sub">
-            Scan the QR code or share the link to download the ORACLE TV MEDIA app
+            Scan the QR code or share the link to download the MAMLAKA TV MEDIA app
           </div>
 
           <div className="qr-code-wrap">

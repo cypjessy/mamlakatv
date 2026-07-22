@@ -92,12 +92,12 @@ The app is a **Next.js 16** single-page church application serving both as a **r
 
 | Variable | Value |
 |----------|-------|
-| Project ID | `campuslink-3fykr` |
-| API Key | `AIzaSyDK-rVtXljBJmufyWGaUjCV7OaaDgY9pxU` |
-| Auth Domain | `campuslink-3fykr.firebaseapp.com` |
-| Storage Bucket | `campuslink-3fykr.firebasestorage.app` |
-| Messaging Sender ID | `91011410422` |
-| App ID | `1:91011410422:web:cf25d539063c8daf247fd7` |
+| Project ID | `mlimanitv-2bc9d` |
+| API Key | `AIzaSyCgmswKeAg-1bMRhvQEXsTDfQ-H6qJ80lM` |
+| Auth Domain | `mlimanitv-2bc9d.firebaseapp.com` |
+| Storage Bucket | `mlimanitv-2bc9d.firebasestorage.app` |
+| Messaging Sender ID | `879007092365` |
+| App ID | `1:879007092365:web:098f57cf765ee93c001cc4` |
 
 **Services Used:**
 - **Firebase Auth** — Email/Password + Google sign-in for members and admins
@@ -144,7 +144,7 @@ The app is a **Next.js 16** single-page church application serving both as a **r
 
 | Variable | Value |
 |----------|-------|
-| Channel ID | `UClJC1T28ehRu4iEOfspIIvQ` |
+| Channel ID | `UCLYXfLiMpt1E2SsVnhyY_xA` |
 | API Key | `AIzaSyALrqAmub3vsSUgkme6_6EoOoAUMOdAhxs` |
 
 **Usage:** Server-side sync endpoint (`POST /api/youtube/sync`) fetches:
@@ -475,12 +475,12 @@ ssh root@173.249.50.98
 # ============================================================
 # FIREBASE
 # ============================================================
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDK-rVtXljBJmufyWGaUjCV7OaaDgY9pxU
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=campuslink-3fykr.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=campuslink-3fykr
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=campuslink-3fykr.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=91011410422
-NEXT_PUBLIC_FIREBASE_APP_ID=1:91011410422:web:cf25d539063c8daf247fd7
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCgmswKeAg-1bMRhvQEXsTDfQ-H6qJ80lM
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=mlimanitv-2bc9d.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=mlimanitv-2bc9d
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=mlimanitv-2bc9d.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=879007092365
+NEXT_PUBLIC_FIREBASE_APP_ID=1:879007092365:web:098f57cf765ee93c001cc4
 
 # ============================================================
 # CHURCH CONFIG
@@ -514,7 +514,7 @@ NEXT_PUBLIC_AZURACAST_PUBLIC_EMBED_URL=https://azuracast.histoview.co.ke/public/
 # ============================================================
 # YOUTUBE
 # ============================================================
-NEXT_PUBLIC_YOUTUBE_CHANNEL_ID=UClJC1T28ehRu4iEOfspIIvQ
+NEXT_PUBLIC_YOUTUBE_CHANNEL_ID=UCLYXfLiMpt1E2SsVnhyY_xA
 YOUTUBE_API_KEY=AIzaSyALrqAmub3vsSUgkme6_6EoOoAUMOdAhxs
 
 # ============================================================

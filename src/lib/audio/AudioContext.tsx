@@ -49,8 +49,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (!("mediaSession" in navigator)) return;
 
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: title || "ORACLE TV MEDIA Radio",
-        artist: artist || "ORACLE TV MEDIA",
+        title: title || "MAMLAKA TV Radio",
+        artist: artist || "MAMLAKA TV MEDIA",
         album: "Radio Stream",
         artwork: albumArt
           ? [

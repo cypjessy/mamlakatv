@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BUILD_SECRET = process.env.BUILD_SECRET_TOKEN || "";
 const FCM_SERVER_KEY = process.env.NEXT_PUBLIC_FIREBASE_FCM_KEY || "";
-const APP_DOWNLOAD_URL = "https://oracletvmedia.vercel.app/oracle-tv-app.apk";
+const APP_DOWNLOAD_URL = "https://oracletvmedia.vercel.app/mamlaka-tv-app.apk";
 
 export async function POST(request: NextRequest) {
   // ── Verify build secret ──
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     const notificationTitle = body.title || "📲 App Update Available";
-    const notificationMessage = body.message || `Version ${body.versionName || "new"} of ORACLE TV MEDIA app is ready. Tap to download.`;
+    const notificationMessage = body.message || `Version ${body.versionName || "new"} of MAMLAKA TV MEDIA app is ready. Tap to download.`;
 
     // ── Fetch all users with fcm_token from Firestore ──
     const { db } = await import("@/lib/firebase");

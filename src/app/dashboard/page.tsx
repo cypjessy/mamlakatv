@@ -44,7 +44,7 @@ function timeAgo(dateStr: string): string {
    ================================================================== */
 
 const church = {
-  name: "ORACLE TV MEDIA",
+  name: "MAMLAKA TV MEDIA",
   tagline: "Worship. Word. Community.",
   logoInitials: "TP",
 };
@@ -325,9 +325,9 @@ interface ScheduleSlot {
 
 function getFallbackSchedule(): ScheduleSlot[] {
   const h = new Date().getHours();
-  if (h < 9) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "ORACLE TV MEDIA Radio" }];
-  if (h < 12) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: true, hasContent: true, stationName: "ORACLE TV MEDIA Radio" }];
-  return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "ORACLE TV MEDIA Radio" }];
+  if (h < 9) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MAMLAKA TV Radio" }];
+  if (h < 12) return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: true, hasContent: true, stationName: "MAMLAKA TV Radio" }];
+  return [{ time: "9:00 AM", label: "Sunday Worship Service", isNow: false, hasContent: true, stationName: "MAMLAKA TV Radio" }];
 }
 
 function parseTimeToMinutes(t: string): number {
@@ -489,8 +489,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (audio.isPlaying) {
       const np = npData?.nowPlaying;
-      const title = np?.song?.title || "ORACLE TV MEDIA Radio";
-      const artist = np?.song?.artist || "ORACLE TV MEDIA";
+      const title = np?.song?.title || "MAMLAKA TV Radio";
+      const artist = np?.song?.artist || "MAMLAKA TV MEDIA";
       const albumArt = np?.song?.albumArt;
       audio.updateMediaSession(title, artist, albumArt);
     }
@@ -895,7 +895,7 @@ export default function DashboardPage() {
                 <div className="st-time">{slot.time}</div>
                 <div className="st-body">
                   <div className={`st-label${slot.isNow ? "" : " upcoming"}`}>{slot.label}</div>
-                  <div className="st-station"><i className="fas fa-radio"></i> {slot.stationName || "ORACLE TV MEDIA Radio"}</div>
+                  <div className="st-station"><i className="fas fa-radio"></i> {slot.stationName || "MAMLAKA TV Radio"}</div>
                 </div>
                 {slot.isNow && <span className="st-now-badge">NOW</span>}
               </div>

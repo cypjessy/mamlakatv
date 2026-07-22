@@ -364,7 +364,7 @@ export default function GalleryPage() {
       <ToastBridge />
 
       <div className="app-container">
-        <PremiumTopBar icon="fa-images" title="ORACLE TV MEDIA" subtitle="Photo Gallery" />
+        <PremiumTopBar icon="fa-images" title="MAMLAKA TV MEDIA" subtitle="Photo Gallery" />
 
         {/* ========== OFFLINE BANNER ========== */}
         {offline && (

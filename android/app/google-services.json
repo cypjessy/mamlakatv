@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "805350988448",
-    "project_id": "campuslink-rgxfu",
-    "storage_bucket": "campuslink-rgxfu.firebasestorage.app"
+    "project_number": "879007092365",
+    "project_id": "mlimanitv-2bc9d",
+    "storage_bucket": "mlimanitv-2bc9d.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:805350988448:android:490d43b70df2cf1710c7c5",
+        "mobilesdk_app_id": "1:879007092365:android:a72aad5a057d6c78001cc4",
         "android_client_info": {
-          "package_name": "com.oracletvmedia.app"
+          "package_name": "com.mlmanitv.app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "805350988448-33ulu63cbevnji0mmnd6tdet3f93sco7.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAMQL8C8P8T6YcZdPzGoREowG3s5GCwBxQ"
+          "current_key": "AIzaSyAlmagkrOarcj0IY7plu0v3lef_WUtz0qQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "805350988448-33ulu63cbevnji0mmnd6tdet3f93sco7.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

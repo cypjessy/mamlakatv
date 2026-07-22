@@ -486,7 +486,7 @@ export default function RadioStationPage() {
           <style>{`@media(max-width:768px){#rsMobileMenuBtn{display:flex!important;}}`}</style>
           <div className="rs-header-logo"><i className="fas fa-tower-broadcast"></i></div>
           <div className="rs-header-info">
-            <div className="rs-header-name">ORACLE TV MEDIA Radio</div>
+            <div className="rs-header-name">MAMLAKA TV Radio</div>
           </div>
           <div className="rs-header-right">
             {activeDJ && <div className="rs-dj-name"><i className="fas fa-user"></i> {activeDJ}</div>}

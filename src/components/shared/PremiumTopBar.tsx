@@ -156,7 +156,7 @@ export default function PremiumTopBar({
             )}
             <div className="ptb-info">
               <div className="ptb-title">
-                {title || "ORACLE TV MEDIA"}
+                {title || "MAMLAKA TV MEDIA"}
               </div>
               {subtitle && <div className="ptb-sub">{subtitle}</div>}
             </div>
